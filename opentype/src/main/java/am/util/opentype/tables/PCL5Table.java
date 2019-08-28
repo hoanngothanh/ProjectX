@@ -16,6 +16,7 @@
 package am.util.opentype.tables;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import am.util.opentype.OpenTypeReader;
 import am.util.opentype.TableRecord;
@@ -27,7 +28,7 @@ import am.util.opentype.TableRecord;
  * Technical Reference Manual available from Hewlett-Packard Boise Printer Division.
  */
 @SuppressWarnings("unused")
-public class PCL5Table {
+public class PCL5Table extends BaseTable {
 
     private final int mMajorVersion;
     private final int mMinorVersion;
@@ -46,6 +47,7 @@ public class PCL5Table {
     private final int mSerifStyle;
 
     public PCL5Table(OpenTypeReader reader, TableRecord record) throws IOException {
+        super(record);
         if (reader == null || record == null || record.getTableTag() != TableRecord.TAG_PCLT)
             throw new IOException();
         reader.seek(record.getOffset());
@@ -118,7 +120,7 @@ public class PCL5Table {
      * A      Adobe Systems
      * B      Bitstream Inc.
      * C      Agfa Corporation
-     * H      Bigelow & Holmes
+     * H      Bigelow &amp; Holmes
      * L      Linotype Company
      * M      Monotype Typography Ltd.
      *
@@ -410,5 +412,38 @@ public class PCL5Table {
      */
     public int getSerifStyle() {
         return mSerifStyle;
+    }
+
+    @Override
+    public int getHashCode() {
+        int result = Objects.hash(super.getHashCode(), mMajorVersion, mMinorVersion, mFontNumber,
+                mPitch, mXHeight, mStyle, mTypeFamily, mCapHeight, mSymbolSet, mStrokeWeight,
+                mWidthType, mSerifStyle);
+        result = 31 * result + Arrays.hashCode(mTypeface);
+        result = 31 * result + Arrays.hashCode(mCharacterComplement);
+        result = 31 * result + Arrays.hashCode(mFileName);
+        return result;
+    }
+
+    @Override
+    public String getString() {
+        return "PCL5Table{" +
+                "record=" + String.valueOf(getTableRecord()) +
+                ", majorVersion=" + mMajorVersion +
+                ", minorVersion=" + mMinorVersion +
+                ", fontNumber=" + mFontNumber +
+                ", pitch=" + mPitch +
+                ", xHeight=" + mXHeight +
+                ", style=" + mStyle +
+                ", typeFamily=" + mTypeFamily +
+                ", capHeight=" + mCapHeight +
+                ", symbolSet=" + mSymbolSet +
+                ", typeface=" + Arrays.toString(mTypeface) +
+                ", characterComplement=" + Arrays.toString(mCharacterComplement) +
+                ", fileName=" + Arrays.toString(mFileName) +
+                ", strokeWeight=" + mStrokeWeight +
+                ", widthType=" + mWidthType +
+                ", serifStyle=" + mSerifStyle +
+                '}';
     }
 }

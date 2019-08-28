@@ -16,6 +16,7 @@
 package am.project.x;
 
 import am.project.x.base.BroadcastApplication;
+import am.project.x.notification.NotificationChannelHelper;
 
 /**
  * 应用Application
@@ -24,13 +25,13 @@ import am.project.x.base.BroadcastApplication;
  */
 public class ProjectXApplication extends BroadcastApplication {
 
-    @SuppressWarnings("all")
     private static ProjectXApplication mInstance;
 
     @Override
     public void onCreate() {
         mInstance = this;
         super.onCreate();
+        NotificationChannelHelper.updateNotificationChannel(this);
     }
 
     /**

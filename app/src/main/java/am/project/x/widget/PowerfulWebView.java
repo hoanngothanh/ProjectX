@@ -15,6 +15,7 @@
  */
 package am.project.x.widget;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -25,7 +26,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.ViewGroup;
 import android.webkit.JsResult;
@@ -37,11 +37,13 @@ import android.webkit.WebViewClient;
 import java.util.ArrayList;
 
 import am.project.x.R;
+import androidx.annotation.NonNull;
 
 /**
  * 带进度条的WebView
  * Created by Alex on 2017/9/26.
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class PowerfulWebView extends WebView {
 
 
@@ -97,7 +99,7 @@ public class PowerfulWebView extends WebView {
         final int paddingTop = getPaddingTop();
         final int paddingRight = getPaddingRight();
         final int maxWidth = getWidth() - paddingLeft - paddingRight;
-        canvas.drawRect(paddingLeft, paddingTop, maxWidth * mProgress / 100,
+        canvas.drawRect(paddingLeft, paddingTop, Math.round(maxWidth * mProgress / 100.0f),
                 paddingTop + mProgressHeight, mPaint);
     }
 
@@ -143,13 +145,11 @@ public class PowerfulWebView extends WebView {
         }
     }
 
-    @SuppressWarnings("unused")
     public void setProgressColor(int color) {
         mProgressColor = color;
         invalidate();
     }
 
-    @SuppressWarnings("unused")
     public void setProgressHeight(int height) {
         mProgressHeight = height;
         invalidate();
@@ -175,7 +175,6 @@ public class PowerfulWebView extends WebView {
         destroy();
     }
 
-    @SuppressWarnings("unused")
     public void addJavascriptInterface(JavascriptInterfaceHelper helper) {
         if (helper == null)
             return;
@@ -184,7 +183,6 @@ public class PowerfulWebView extends WebView {
             mHelpers.add(helper);
     }
 
-    @SuppressWarnings("unused")
     public void removeJavascriptInterface(JavascriptInterfaceHelper helper) {
         if (helper == null)
             return;
@@ -196,12 +194,10 @@ public class PowerfulWebView extends WebView {
         mTitleListener = listener;
     }
 
-    @SuppressWarnings("unused")
     public void setOnProgressListener(OnProgressListener listener) {
         mProgressListener = listener;
     }
 
-    @SuppressWarnings("unused")
     public void setOnErrorListener(OnErrorListener listener) {
         mErrorListener = listener;
     }
@@ -301,9 +297,7 @@ public class PowerfulWebView extends WebView {
      */
     public abstract static class JavascriptInterfaceHelper {
 
-        @SuppressWarnings("all")
         public static final int SUPPORT_TYPE_IGNORE = 0;// 忽略API 17以下用户
-        @SuppressWarnings("all")
         public static final int SUPPORT_TYPE_PERMIT = 1;// 允许API 17以下用户（不安全且不一定有效）
         public static final int SUPPORT_TYPE_COMPAT = 2;// 兼容API 17以下用户
         private final String mName;
@@ -320,7 +314,7 @@ public class PowerfulWebView extends WebView {
             mName = name;
         }
 
-        @SuppressWarnings("all")
+        @SuppressLint({"JavascriptInterface", "AddJavascriptInterface"})
         private void onAdd(WebView view) {
             final int type = getSupportType();
             switch (type) {
@@ -362,7 +356,6 @@ public class PowerfulWebView extends WebView {
          *
          * @param value 结果
          */
-        @SuppressWarnings("unused")
         protected void sendJavascriptResult(String value) {
             Message message = mHandler.obtainMessage();
             message.obj = value;

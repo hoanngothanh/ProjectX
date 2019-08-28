@@ -28,7 +28,7 @@ import am.util.opentype.TableRecord;
  * All reserved areas must be set to 0.
  */
 @SuppressWarnings("unused")
-public class HorizontalHeaderTable {
+public class HorizontalHeaderTable extends BaseTable {
 
     private final int mMajorVersion;
     private final int mMinorVersion;
@@ -46,6 +46,7 @@ public class HorizontalHeaderTable {
     private final int mNumberOfHMetrics;
 
     public HorizontalHeaderTable(OpenTypeReader reader, TableRecord record) throws IOException {
+        super(record);
         if (reader == null || record == null || record.getTableTag() != TableRecord.TAG_HHEA)
             throw new IOException();
         reader.seek(record.getOffset());
@@ -209,5 +210,34 @@ public class HorizontalHeaderTable {
      */
     public int getNumberOfHMetrics() {
         return mNumberOfHMetrics;
+    }
+
+    @Override
+    public int getHashCode() {
+        return Objects.hash(super.getHashCode(), mMajorVersion, mMinorVersion, mAscender,
+                mDescender, mLineGap, mAdvanceWidthMax, mMinLeftSideBearing, mMinRightSideBearing,
+                mXMaxExtent, mCaretSlopeRise, mCaretSlopeRun, mCaretOffset, mMetricDataFormat,
+                mNumberOfHMetrics);
+    }
+
+    @Override
+    public String getString() {
+        return "HorizontalHeaderTable{" +
+                "record=" + String.valueOf(getTableRecord()) +
+                ", majorVersion=" + mMajorVersion +
+                ", minorVersion=" + mMinorVersion +
+                ", ascender=" + mAscender +
+                ", descender=" + mDescender +
+                ", lineGap=" + mLineGap +
+                ", advanceWidthMax=" + mAdvanceWidthMax +
+                ", minLeftSideBearing=" + mMinLeftSideBearing +
+                ", minRightSideBearing=" + mMinRightSideBearing +
+                ", xMaxExtent=" + mXMaxExtent +
+                ", caretSlopeRise=" + mCaretSlopeRise +
+                ", caretSlopeRun=" + mCaretSlopeRun +
+                ", caretOffset=" + mCaretOffset +
+                ", metricDataFormat=" + mMetricDataFormat +
+                ", numberOfHMetrics=" + mNumberOfHMetrics +
+                '}';
     }
 }

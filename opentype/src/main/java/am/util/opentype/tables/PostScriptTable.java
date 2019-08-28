@@ -18,6 +18,7 @@ package am.util.opentype.tables;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import am.util.opentype.FileOpenTypeReader;
 import am.util.opentype.OpenTypeReader;
@@ -35,7 +36,7 @@ import am.util.opentype.TableRecord;
  * OpenType fonts with CFF data use Version 3.0 only.
  */
 @SuppressWarnings("unused")
-public class PostScriptTable {
+public class PostScriptTable extends BaseTable {
 
     private static final String[] MAC_GLYPHS = {
             ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl",
@@ -102,11 +103,11 @@ public class PostScriptTable {
     private final int mMaxMemType1;
     private final int mNumGlyphs;
     private final int[] mGlyphNameIndex;
-    //    private final ArrayList<String> mNames;
     private final ArrayList<byte[]> mNames;
     private final int[] mOffset;
 
     public PostScriptTable(OpenTypeReader reader, TableRecord record) throws IOException {
+        super(record);
         if (reader == null || record == null || record.getTableTag() != TableRecord.TAG_POST)
             throw new IOException();
         reader.seek(record.getOffset());
@@ -352,13 +353,13 @@ public class PostScriptTable {
      * @return Glyph name.
      * @throws UnsupportedEncodingException If the named charset is not supported
      */
-    @SuppressWarnings("all")
+    @SuppressWarnings("WeakerAccess")
     public String getGlyphName(int glyphNameIndex, String charsetName)
             throws UnsupportedEncodingException {
         if (glyphNameIndex >= 258) {
             return new String(mNames.get(glyphNameIndex - 258), charsetName);
         } else {
-            return MAC_GLYPHS[glyphNameIndex];
+            return new String(MAC_GLYPHS[glyphNameIndex].getBytes(), charsetName);
         }
     }
 
@@ -382,5 +383,35 @@ public class PostScriptTable {
      */
     public int[] getOffset() {
         return mOffset;
+    }
+
+    @Override
+    public int getHashCode() {
+        int result = Objects.hash(super.getHashCode(), mVersion, mItalicAngle, mUnderlinePosition,
+                mUnderlineThickness, mIsFixedPitch, mMinMemType42, mMaxMemType42, mMinMemType1,
+                mMaxMemType1, mNumGlyphs, mNames);
+        result = 31 * result + Arrays.hashCode(mGlyphNameIndex);
+        result = 31 * result + Arrays.hashCode(mOffset);
+        return result;
+    }
+
+    @Override
+    public String getString() {
+        return "PostScriptTable{" +
+                "record=" + String.valueOf(getTableRecord()) +
+                ", version=" + mVersion +
+                ", italicAngle=" + mItalicAngle +
+                ", underlinePosition=" + mUnderlinePosition +
+                ", underlineThickness=" + mUnderlineThickness +
+                ", isFixedPitch=" + mIsFixedPitch +
+                ", minMemType42=" + mMinMemType42 +
+                ", maxMemType42=" + mMaxMemType42 +
+                ", minMemType1=" + mMinMemType1 +
+                ", maxMemType1=" + mMaxMemType1 +
+                ", numGlyphs=" + mNumGlyphs +
+                ", glyphNameIndex=" + Arrays.toString(mGlyphNameIndex) +
+                ", names=" + mNames +
+                ", offset=" + Arrays.toString(mOffset) +
+                '}';
     }
 }

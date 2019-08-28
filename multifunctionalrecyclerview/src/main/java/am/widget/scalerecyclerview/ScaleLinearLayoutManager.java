@@ -17,11 +17,11 @@
 package am.widget.scalerecyclerview;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.View;
 
 import am.widget.multifunctionalrecyclerview.layoutmanager.PagingLayoutManager;
+import androidx.annotation.NonNull;
 
 /**
  * 可缩放的线性布局
@@ -52,7 +52,7 @@ public class ScaleLinearLayoutManager extends PagingLayoutManager {
     }
 
     @Override
-    public void measureChildWithMargins(View child, int widthUsed, int heightUsed) {
+    public void measureChildWithMargins(@NonNull View child, int widthUsed, int heightUsed) {
         ScaleRecyclerView.setScale(child);
         super.measureChildWithMargins(child, widthUsed, heightUsed);
     }

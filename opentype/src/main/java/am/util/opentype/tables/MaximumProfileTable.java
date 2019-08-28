@@ -27,7 +27,7 @@ import am.util.opentype.TableRecord;
  * must use Version 1.0 of this table, where all data is required.
  */
 @SuppressWarnings("unused")
-public class MaximumProfileTable {
+public class MaximumProfileTable extends BaseTable {
 
     private final float mVersion;
     private final int mNumGlyphs;
@@ -46,6 +46,7 @@ public class MaximumProfileTable {
     private final int mMaxComponentDepth;
 
     public MaximumProfileTable(OpenTypeReader reader, TableRecord record) throws IOException {
+        super(record);
         if (reader == null || record == null || record.getTableTag() != TableRecord.TAG_MAXP)
             throw new IOException();
         reader.seek(record.getOffset());
@@ -259,5 +260,35 @@ public class MaximumProfileTable {
      */
     public int getMaxComponentDepth() {
         return mMaxComponentDepth;
+    }
+
+    @Override
+    public int getHashCode() {
+        return Objects.hash(super.getHashCode(), mVersion, mNumGlyphs, mMaxPoints, mMaxContours,
+                mMaxCompositePoints, mMaxCompositeContours, mMaxZones, mMaxTwilightPoints,
+                mMaxStorage, mMaxFunctionDefs, mMaxInstructionDefs, mMaxStackElements,
+                mMaxSizeOfInstructions, mMaxComponentElements, mMaxComponentDepth);
+    }
+
+    @Override
+    public String getString() {
+        return "MaximumProfileTable{" +
+                "record=" + String.valueOf(getTableRecord()) +
+                ", version=" + mVersion +
+                ", numGlyphs=" + mNumGlyphs +
+                ", maxPoints=" + mMaxPoints +
+                ", maxContours=" + mMaxContours +
+                ", maxCompositePoints=" + mMaxCompositePoints +
+                ", maxCompositeContours=" + mMaxCompositeContours +
+                ", maxZones=" + mMaxZones +
+                ", maxTwilightPoints=" + mMaxTwilightPoints +
+                ", maxStorage=" + mMaxStorage +
+                ", maxFunctionDefs=" + mMaxFunctionDefs +
+                ", maxInstructionDefs=" + mMaxInstructionDefs +
+                ", maxStackElements=" + mMaxStackElements +
+                ", maxSizeOfInstructions=" + mMaxSizeOfInstructions +
+                ", maxComponentElements=" + mMaxComponentElements +
+                ", maxComponentDepth=" + mMaxComponentDepth +
+                '}';
     }
 }

@@ -6,225 +6,242 @@
     android:layout_height="match_parent"
     tools:context=".business.main.fragments.WidgetsFragment">
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_gradienttabstrip"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_gradienttabstrip"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_gradienttabstrip"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_tagtabstrip"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_tagtabstrip"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_tagtabstrip"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_gradienttabstrip"
             app:layout_constraintStart_toEndOf="@id/widget_btn_gradienttabstrip"
             app:layout_constraintTop_toTopOf="@id/widget_btn_gradienttabstrip"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_indicatortabstrip"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_indicatortabstrip"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_indicatortabstrip"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_tagtabstrip"
             app:layout_constraintStart_toEndOf="@id/widget_btn_tagtabstrip"
             app:layout_constraintTop_toTopOf="@id/widget_btn_tagtabstrip"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_shapeimageview"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
+            android:drawableTop="@drawable/ic_widgets_multifunctionalimageview"
             android:drawablePadding="6dp"
-            android:drawableTop="@drawable/ic_widgets_shapeimageview"
-            android:paddingBottom="18dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_shapeimageview"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_indicatortabstrip"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/widget_btn_indicatortabstrip"
             app:layout_constraintTop_toTopOf="@id/widget_btn_indicatortabstrip" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_statelayout"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_statelayout"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_statelayout"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/widget_btn_gradienttabstrip"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_wraplayout"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_wraplayout"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_wraplayout"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_statelayout"
             app:layout_constraintStart_toEndOf="@id/widget_btn_statelayout"
             app:layout_constraintTop_toTopOf="@id/widget_btn_statelayout"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_drawableratingbar"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_drawableratingbar"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_drawableratingbar"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_wraplayout"
             app:layout_constraintStart_toEndOf="@id/widget_btn_wraplayout"
             app:layout_constraintTop_toTopOf="@id/widget_btn_wraplayout"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_headerfootergridview"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_headerfootergridview"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_headerfootergridview"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_drawableratingbar"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/widget_btn_drawableratingbar"
             app:layout_constraintTop_toTopOf="@id/widget_btn_drawableratingbar" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_multiactiontextview"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_multiactiontextview"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_multiactiontextview"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/widget_btn_statelayout"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_recyclepager"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_recyclepager"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_recyclepager"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_multiactiontextview"
             app:layout_constraintStart_toEndOf="@id/widget_btn_multiactiontextview"
             app:layout_constraintTop_toTopOf="@id/widget_btn_multiactiontextview"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_circleprogressbar"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_circleprogressbar"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_circleprogressbar"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_recyclepager"
             app:layout_constraintStart_toEndOf="@id/widget_btn_recyclepager"
             app:layout_constraintTop_toTopOf="@id/widget_btn_recyclepager"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_zxingscanview"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_zxingscanview"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_zxingscanview"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/widget_btn_circleprogressbar"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/widget_btn_circleprogressbar"
             app:layout_constraintTop_toTopOf="@id/widget_btn_circleprogressbar" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/widget_btn_smoothinputlayout"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_widgets_smoothinputlayout"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_widgets_smoothinputlayout"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/widget_btn_multiactiontextview"
             app:layout_constraintWidth_percent="0.25" />
-    </android.support.constraint.ConstraintLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/widget_btn_multifunctionalrecyclerview"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:drawableTop="@drawable/ic_widgets_recyclepager"
+            android:drawablePadding="6dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="18dp"
+            android:text="@string/main_widgets_multifunctionalrecyclerview"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/widget_btn_smoothinputlayout"
+            app:layout_constraintStart_toEndOf="@id/widget_btn_smoothinputlayout"
+            app:layout_constraintTop_toTopOf="@id/widget_btn_smoothinputlayout"
+            app:layout_constraintWidth_percent="0.25" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

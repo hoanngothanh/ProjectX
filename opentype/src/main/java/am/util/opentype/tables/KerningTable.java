@@ -37,13 +37,14 @@ import am.util.opentype.TableRecord;
  * so that they can be used to limit the total effect of other subtables.
  */
 @SuppressWarnings("unused")
-public class KerningTable {
+public class KerningTable extends BaseTable {
 
     private final int mVersion;
     private final int mNumberOfTables;
     private final List<SubTable> mSubTables;
 
     public KerningTable(OpenTypeReader reader, TableRecord record) throws IOException {
+        super(record);
         if (reader == null || record == null || record.getTableTag() != TableRecord.TAG_KERN)
             throw new IOException();
         reader.seek(record.getOffset());
@@ -123,16 +124,30 @@ public class KerningTable {
         return mSubTables;
     }
 
+    @Override
+    public int getHashCode() {
+        return Objects.hash(super.getHashCode(), mVersion, mNumberOfTables, mSubTables);
+    }
+
+    @Override
+    public String getString() {
+        return "KerningTable{" +
+                "record=" + String.valueOf(getTableRecord()) +
+                ", version=" + mVersion +
+                ", numberOfTables=" + mNumberOfTables +
+                ", subTables=" + String.valueOf(mSubTables) +
+                '}';
+    }
+
     /**
      * SubTable
      */
-    @SuppressWarnings("unused")
     public static class SubTable {
         private final int mVersion;
         private final int mLength;
         private final int mCoverage;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable(int version, int length, int coverage) {
             mVersion = version;
             mLength = length;
@@ -147,6 +162,7 @@ public class KerningTable {
          *
          * @return Version.
          */
+        @SuppressWarnings("WeakerAccess")
         public int getVersion() {
             return mVersion;
         }
@@ -156,6 +172,7 @@ public class KerningTable {
          *
          * @return Length of the subtable.
          */
+        @SuppressWarnings("WeakerAccess")
         public int getLength() {
             return mLength;
         }
@@ -165,6 +182,7 @@ public class KerningTable {
          *
          * @return Coverage.
          */
+        @SuppressWarnings("WeakerAccess")
         public int getCoverage() {
             return mCoverage;
         }
@@ -223,12 +241,35 @@ public class KerningTable {
         public int getFormat() {
             return mCoverage >> 8;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SubTable subTable = (SubTable) o;
+            return mVersion == subTable.mVersion &&
+                    mLength == subTable.mLength &&
+                    mCoverage == subTable.mCoverage;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mVersion, mLength, mCoverage);
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable{" +
+                    "version=" + mVersion +
+                    ", length=" + mLength +
+                    ", coverage=" + mCoverage +
+                    '}';
+        }
     }
 
     /**
      * Format 0
      */
-    @SuppressWarnings("unused")
     public static class SubTableWithFormat0 extends SubTable {
         private final int mNumberOfPairs;
         private final int mSearchRange;
@@ -236,7 +277,7 @@ public class KerningTable {
         private final int mRangeShift;
         private final List<KerningItem> mItems;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTableWithFormat0(int version, int length, int coverage, int numberOfPairs,
                                    int searchRange, int entrySelector, int rangeShift,
                                    List<KerningItem> items) {
@@ -297,18 +338,50 @@ public class KerningTable {
         public List<KerningItem> getItems() {
             return mItems;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTableWithFormat0)) return false;
+            if (!super.equals(o)) return false;
+            SubTableWithFormat0 that = (SubTableWithFormat0) o;
+            return mNumberOfPairs == that.mNumberOfPairs &&
+                    mSearchRange == that.mSearchRange &&
+                    mEntrySelector == that.mEntrySelector &&
+                    mRangeShift == that.mRangeShift &&
+                    Objects.equals(mItems, that.mItems);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), mNumberOfPairs, mSearchRange, mEntrySelector,
+                    mRangeShift, mItems);
+        }
+
+        @Override
+        public String toString() {
+            return "SubTableWithFormat0{" +
+                    "version=" + getVersion() +
+                    ", length=" + getLength() +
+                    ", coverage=" + getCoverage() +
+                    ", numberOfPairs=" + mNumberOfPairs +
+                    ", searchRange=" + mSearchRange +
+                    ", entrySelector=" + mEntrySelector +
+                    ", rangeShift=" + mRangeShift +
+                    ", items=" + String.valueOf(mItems) +
+                    '}';
+        }
     }
 
     /**
      * Kerning Item
      */
-    @SuppressWarnings("unused")
     public static class KerningItem {
         private final int mLeft;
         private final int mRight;
         private final int mValue;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public KerningItem(int left, int right, int value) {
             mLeft = left;
             mRight = right;
@@ -343,12 +416,35 @@ public class KerningTable {
         public int getValue() {
             return mValue;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            KerningItem that = (KerningItem) o;
+            return mLeft == that.mLeft &&
+                    mRight == that.mRight &&
+                    mValue == that.mValue;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mLeft, mRight, mValue);
+        }
+
+        @Override
+        public String toString() {
+            return "KerningItem{" +
+                    "left=" + mLeft +
+                    ", right=" + mRight +
+                    ", value=" + mValue +
+                    '}';
+        }
     }
 
     /**
      * Format 2
      */
-    @SuppressWarnings("unused")
     public static class SubTableWithFormat1 extends SubTable {
         private final int mRowWidth;
         private final int mLeftClassTableOffset;
@@ -359,7 +455,7 @@ public class KerningTable {
         private final int mRightFirstGlyph;
         private final int mRightNumberOfGlyphs;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTableWithFormat1(int version, int length, int coverage, int rowWidth,
                                    int leftClassTableOffset, int rightClassTableOffset,
                                    int arrayOffset, int leftFirstGlyph, int leftNumberOfGlyphs,
@@ -445,6 +541,46 @@ public class KerningTable {
          */
         public int getRightNumberOfGlyphs() {
             return mRightNumberOfGlyphs;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTableWithFormat1)) return false;
+            if (!super.equals(o)) return false;
+            SubTableWithFormat1 that = (SubTableWithFormat1) o;
+            return mRowWidth == that.mRowWidth &&
+                    mLeftClassTableOffset == that.mLeftClassTableOffset &&
+                    mRightClassTableOffset == that.mRightClassTableOffset &&
+                    mArrayOffset == that.mArrayOffset &&
+                    mLeftFirstGlyph == that.mLeftFirstGlyph &&
+                    mLeftNumberOfGlyphs == that.mLeftNumberOfGlyphs &&
+                    mRightFirstGlyph == that.mRightFirstGlyph &&
+                    mRightNumberOfGlyphs == that.mRightNumberOfGlyphs;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), mRowWidth, mLeftClassTableOffset,
+                    mRightClassTableOffset, mArrayOffset, mLeftFirstGlyph, mLeftNumberOfGlyphs,
+                    mRightFirstGlyph, mRightNumberOfGlyphs);
+        }
+
+        @Override
+        public String toString() {
+            return "SubTableWithFormat1{" +
+                    "version=" + getVersion() +
+                    ", length=" + getLength() +
+                    ", coverage=" + getCoverage() +
+                    ", rowWidth=" + mRowWidth +
+                    ", leftClassTableOffset=" + mLeftClassTableOffset +
+                    ", rightClassTableOffset=" + mRightClassTableOffset +
+                    ", arrayOffset=" + mArrayOffset +
+                    ", leftFirstGlyph=" + mLeftFirstGlyph +
+                    ", leftNumberOfGlyphs=" + mLeftNumberOfGlyphs +
+                    ", rightFirstGlyph=" + mRightFirstGlyph +
+                    ", rightNumberOfGlyphs=" + mRightNumberOfGlyphs +
+                    '}';
         }
     }
 }

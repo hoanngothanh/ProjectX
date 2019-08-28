@@ -17,24 +17,26 @@ package am.project.x.business.developing;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Rect;
+import android.graphics.Region;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.Nullable;
 
 import am.project.x.R;
 import am.project.x.base.BaseActivity;
-import am.project.x.business.developing.display.DisplayRecyclerView;
+import am.project.x.privateapi.viewtreeobserver.InternalInsetsInfo;
+import am.project.x.privateapi.viewtreeobserver.OnComputeInternalInsetsListener;
+import am.project.x.privateapi.viewtreeobserver.ViewTreeObserverPrivateApis;
 
 /**
  * 正在开发
  */
-public class DevelopingActivity extends BaseActivity {
+public class DevelopingActivity extends BaseActivity implements OnComputeInternalInsetsListener {
 
     public static void start(Context context) {
         context.startActivity(new Intent(context, DevelopingActivity.class));
     }
-
-    private final DisplayAdapter mAdapter = new DisplayAdapter();
-    private DisplayRecyclerView mVContent;
 
     @Override
     protected int getContentViewLayout() {
@@ -44,7 +46,25 @@ public class DevelopingActivity extends BaseActivity {
     @Override
     protected void initializeActivity(@Nullable Bundle savedInstanceState) {
         setSupportActionBar(R.id.developing_toolbar);
-        mVContent = findViewById(R.id.display_rv_content);
-        mVContent.setAdapter(mAdapter);
+
+        ViewTreeObserverPrivateApis.addOnComputeInternalInsetsListener(
+                getWindow().getDecorView().getRootView().getViewTreeObserver(),
+                ViewTreeObserverPrivateApis.newInnerOnComputeInternalInsetsListener(this));
+    }
+
+    @Override
+    public void onComputeInternalInsets(InternalInsetsInfo inoutInfo) {
+        try {
+            final Rect contentInsets = inoutInfo.getContentInsets();
+            contentInsets.setEmpty();
+            final Rect visibleInsets = inoutInfo.getVisibleInsets();
+            visibleInsets.setEmpty();
+            final Region touchableRegion = inoutInfo.getTouchableRegion();
+            touchableRegion.set(0, 0, 1080, 100);
+        } catch (Exception e) {
+            // ignore
+        }
+        final boolean result = inoutInfo.setTouchableInsets(InternalInsetsInfo.TOUCHABLE_INSETS_REGION);
+        System.out.println("lalalalaal-------------------------------------setTouchableInsets:" + result);
     }
 }

@@ -15,10 +15,10 @@
  */
 package am.project.x.business.widgets.drawableratingbar;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
@@ -30,6 +30,7 @@ import android.widget.Switch;
 import am.project.x.R;
 import am.project.x.base.BaseActivity;
 import am.widget.drawableratingbar.DrawableRatingBar;
+import androidx.annotation.Nullable;
 
 /**
  * 图片评级
@@ -66,8 +67,8 @@ public class DrawableRatingBarActivity extends BaseActivity implements
     }
 
     // Listener
+    @SuppressLint("RtlHardcoded")
     @Override
-    @SuppressWarnings("all")
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         switch (position) {
             default:

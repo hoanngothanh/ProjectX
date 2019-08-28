@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".business.others.ftp.FTPActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/ftp_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:title="@string/ftp_label" />
+
+    <androidx.appcompat.widget.AppCompatEditText
+        android:id="@+id/ftp_edt_port"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:hint="@string/ftp_port"
+        android:imeOptions="actionDone"
+        android:inputType="numberSigned"
+        android:maxLength="5"
+        app:layout_constraintTop_toBottomOf="@id/ftp_toolbar" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/ftp_btn_open"
+        style="?android:attr/buttonBarButtonStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/ftp_open"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ftp_edt_port"
+        app:layout_constraintWidth_percent="0.5" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/ftp_btn_close"
+        style="?android:attr/buttonBarButtonStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/ftp_close"
+        app:layout_constraintBottom_toBottomOf="@id/ftp_btn_open"
+        app:layout_constraintStart_toEndOf="@id/ftp_btn_open"
+        app:layout_constraintTop_toTopOf="@id/ftp_btn_open"
+        app:layout_constraintWidth_percent="0.5" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

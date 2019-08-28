@@ -16,9 +16,13 @@
 
 package am.drawable;
 
-import android.graphics.Rect;
+import android.content.res.ColorStateList;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.util.AttributeSet;
 import android.view.View;
 
 /**
@@ -26,34 +30,75 @@ import android.view.View;
  */
 class DrawableHelper {
 
-    static Rect PADDING = new Rect();
-
-    /**
-     * 刷新回调布局
-     *
-     * @param drawable Drawable
-     */
-    static void requestCallbackLayout(Drawable drawable) {
-        if (Build.VERSION.SDK_INT >= 11) {
-            if (drawable.getCallback() != null && drawable.getCallback() instanceof View) {
-                View view = (View) drawable.getCallback();
-                view.requestLayout();
-            }
+    static TypedArray obtainAttributes(Resources res, Resources.Theme theme,
+                                       AttributeSet set, int[] attrs) {
+        if (theme == null) {
+            return res.obtainAttributes(set, attrs);
         }
+        return theme.obtainStyledAttributes(set, attrs, 0, 0);
+    }
+
+    private static int modulateAlpha(int color, int alpha) {
+        return Color.alpha(color) * (alpha + (alpha >> 7)) >> 8;
+    }
+
+    static int getColor(ColorStateList color, int[] state, int alpha) {
+        if (color == null)
+            return Color.TRANSPARENT;
+        final int c = color.getColorForState(state, color.getDefaultColor());
+        return Color.argb(modulateAlpha(c, alpha), Color.red(c), Color.green(c), Color.blue(c));
+    }
+
+    static int evaluateColor(float fraction, int start, int end) {
+        float startA = ((start >> 24) & 0xff) / 255.0f;
+        float startR = ((start >> 16) & 0xff) / 255.0f;
+        float startG = ((start >> 8) & 0xff) / 255.0f;
+        float startB = (start & 0xff) / 255.0f;
+
+        float endA = ((end >> 24) & 0xff) / 255.0f;
+        float endR = ((end >> 16) & 0xff) / 255.0f;
+        float endG = ((end >> 8) & 0xff) / 255.0f;
+        float endB = (end & 0xff) / 255.0f;
+
+        // convert from sRGB to linear
+        startR = (float) Math.pow(startR, 2.2);
+        startG = (float) Math.pow(startG, 2.2);
+        startB = (float) Math.pow(startB, 2.2);
+
+        endR = (float) Math.pow(endR, 2.2);
+        endG = (float) Math.pow(endG, 2.2);
+        endB = (float) Math.pow(endB, 2.2);
+
+        // compute the interpolated color in linear space
+        float a = startA + fraction * (endA - startA);
+        float r = startR + fraction * (endR - startR);
+        float g = startG + fraction * (endG - startG);
+        float b = startB + fraction * (endB - startB);
+
+        // convert back to sRGB in the [0..255] range
+        a = a * 255.0f;
+        r = (float) Math.pow(r, 1.0 / 2.2) * 255.0f;
+        g = (float) Math.pow(g, 1.0 / 2.2) * 255.0f;
+        b = (float) Math.pow(b, 1.0 / 2.2) * 255.0f;
+
+        return Math.round(a) << 24 | Math.round(r) << 16 | Math.round(g) << 8 | Math.round(b);
     }
 
     /**
-     * 刷新Padding
+     * 获取View类型的回调
      *
      * @param drawable Drawable
+     * @return View
      */
-    static void invalidateCallbackPadding(Drawable drawable) {
-        if (Build.VERSION.SDK_INT >= 11) {
-            if (drawable.getCallback() != null && drawable.getCallback() instanceof View) {
-                View view = (View) drawable.getCallback();
-                drawable.getPadding(PADDING);
-                view.setPadding(PADDING.left, PADDING.top, PADDING.right, PADDING.bottom);
-            }
-        }
+    static View getViewCallback(Drawable drawable) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB)
+            return null;
+        final Drawable.Callback callback = drawable.getCallback();
+        if (callback instanceof View)
+            return (View) callback;
+        else if (callback instanceof Drawable)
+            return getViewCallback((Drawable) callback);
+        else
+            return null;
     }
 }

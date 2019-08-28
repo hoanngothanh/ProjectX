@@ -16,98 +16,253 @@
 
 package am.drawable;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.content.res.ColorStateList;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.DashPathEffect;
+import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.PointF;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Xfermode;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.util.AttributeSet;
 import android.view.Gravity;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.IOException;
+
+import am.widget.R;
 
 /**
  * 尖角框
- * 注意：使用该Drawable时，会改变View的Padding值。
+ * TODO 改进路径算法
  */
-@SuppressWarnings("unused")
+@SuppressLint("RtlHardcoded")
+@SuppressWarnings({"NullableProblems", "WeakerAccess", "unused"})
 public class CornerDrawable extends Drawable {
 
-    private final Paint mFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Xfermode mXfermode;
+
+    private int mAlpha = 0xFF;
+    private int mCornerWidth;// 尖角宽
+    private int mCornerHeight;// 尖角高
+    private float mCornerBezier;// 贝塞尔尖角
+    private int mDirection;//朝向
+    private int mLocation;// 位置
+    private int mCornerMargin;//尖角边距
+    private float mContentRadius;// 内容圆角半径
+    private ColorStateList mFillColor;// 充填颜色
+    private float mStrokeWidth;// 描边宽度
+    private ColorStateList mStrokeColor;// 描边颜色
+    private boolean mClipFill;// 裁剪充填
+    private final Rect mContentPaddingRect = new Rect();// 内容间隔
+
     private final Rect mPaddingRect = new Rect();
     private final Path mPath = new Path();
     private final RectF mRoundRect = new RectF();
-    private final Rect mContentPaddingRect = new Rect();// 内容间隔
-    private Paint mStrokePaint;// optional, set by the caller
-    private int mAlpha = 0xFF;  // modified by the caller
-    private int mColor;// 颜色
-    private int mCornerWidth;// 尖角宽
-    private int mCornerHeight;// 尖角高
-    private float mCornerBezier;// 是否贝塞尔尖角
-    private int mDirection = Gravity.TOP;//朝向
-    private int mLocation = Gravity.CENTER;// 位置
-    private int mCornerMargin;//尖角边距
-    private float mContentRadius;// 内容圆角半径
-
-    private int mIntrinsicWidth;
-    private int mIntrinsicHeight;
-
-    private RectF mTempRect = new RectF();
     private PointF mCornerLeft = new PointF();
     private PointF mCornerCenter = new PointF();
     private PointF mCornerRight = new PointF();
+    private int mIntrinsicWidth;
+    private int mIntrinsicHeight;
 
-    public CornerDrawable(int color, int cornerWidth, int cornerHeight) {
-        this(color, cornerWidth, cornerHeight, 0, Gravity.TOP, Gravity.CENTER, 0);
+    public CornerDrawable() {
+        this(10, 10, Color.BLACK);
     }
 
-    public CornerDrawable(int color, int cornerWidth, int cornerHeight, float cornerBezier,
-                          int direction, int location, float contentRadius) {
-        setColor(color);
-        setCornerWidth(cornerWidth);
-        setCornerHeight(cornerHeight);
-        setCornerBezier(cornerBezier);
-        setDirection(direction);
-        setLocation(location);
-        setContentRadius(contentRadius);
+    public CornerDrawable(int cornerWidth, int cornerHeight, int color) {
+        this(cornerWidth, cornerHeight, 0, Gravity.TOP, Gravity.CENTER, 0,
+                ColorStateList.valueOf(color));
+    }
+
+    public CornerDrawable(int cornerWidth, int cornerHeight, float cornerBezier,
+                          int direction, int location, float contentRadius,
+                          ColorStateList fillColor) {
+        mCornerWidth = cornerWidth;
+        mCornerHeight = cornerHeight;
+        if (cornerBezier >= 0 && cornerBezier <= 1)
+            mCornerBezier = cornerBezier;
+        mDirection = direction;
+        mLocation = location;
+        mContentRadius = contentRadius;
+        mFillColor = fillColor;
+        calculateValue();
     }
 
     @Override
-    @SuppressWarnings("all")
-    public void draw(Canvas canvas) {
-        // remember the alpha values, in case we temporarily overwrite them
-        // when we modulate them with mAlpha
-        final int prevFillAlpha = mFillPaint.getAlpha();
-        final int prevStrokeAlpha = mStrokePaint != null ? mStrokePaint.getAlpha() : 0;
-        // compute the modulate alpha values
-        final int currFillAlpha = modulateAlpha(prevFillAlpha);
-        final int currStrokeAlpha = modulateAlpha(prevStrokeAlpha);
-
-        final boolean haveStroke = currStrokeAlpha > 0 && mStrokePaint != null &&
-                mStrokePaint.getStrokeWidth() > 0;
-
-        final boolean haveFill = currFillAlpha > 0;
-        if (!haveFill && !haveStroke) {
-            return;
+    public void inflate(Resources resources, XmlPullParser parser, AttributeSet attrs,
+                        Resources.Theme theme)
+            throws XmlPullParserException, IOException {
+        super.inflate(resources, parser, attrs, theme);
+        final TypedArray custom = DrawableHelper.obtainAttributes(resources, theme, attrs,
+                R.styleable.CornerDrawable);
+        mCornerWidth = custom.getDimensionPixelSize(R.styleable.CornerDrawable_cdCornerWidth,
+                mCornerWidth);
+        mCornerHeight = custom.getDimensionPixelSize(R.styleable.CornerDrawable_cdCornerHeight,
+                mCornerHeight);
+        final float cornerBezier = custom.getFloat(R.styleable.CornerDrawable_cdCornerBezier,
+                0);
+        mDirection = custom.getInt(R.styleable.CornerDrawable_cdDirection, mDirection);
+        mLocation = custom.getInt(R.styleable.CornerDrawable_cdLocation, mLocation);
+        mCornerMargin = custom.getDimensionPixelSize(R.styleable.CornerDrawable_cdCornerMargin,
+                mCornerMargin);
+        mContentRadius = custom.getDimension(R.styleable.CornerDrawable_cdContentRadius,
+                mContentRadius);
+        mFillColor = custom.getColorStateList(R.styleable.CornerDrawable_android_fillColor);
+        mStrokeWidth = custom.getDimension(R.styleable.CornerDrawable_cdStrokeWidth, mStrokeWidth);
+        mStrokeWidth = custom.getFloat(R.styleable.CornerDrawable_android_strokeWidth,
+                mStrokeWidth);
+        mStrokeColor = custom.getColorStateList(R.styleable.CornerDrawable_android_strokeColor);
+        final int strokeLineCap = custom.getInt(R.styleable.CornerDrawable_android_strokeLineCap,
+                0);
+        final int strokeLineJoin = custom.getInt(R.styleable.CornerDrawable_android_strokeLineJoin,
+                0);
+        final float strokeMiterLimit = custom.getFloat(
+                R.styleable.CornerDrawable_android_strokeMiterLimit, 0);
+        final float dashWidth = custom.getDimension(R.styleable.CornerDrawable_android_dashWidth,
+                0);
+        final float dashGap = custom.getDimension(R.styleable.CornerDrawable_android_dashGap,
+                0);
+        mClipFill = custom.getBoolean(R.styleable.CornerDrawable_cdClipFill, false);
+        final int padding = custom.getDimensionPixelSize(R.styleable.CornerDrawable_android_padding,
+                0);
+        final int paddingStart = custom.getDimensionPixelSize(
+                R.styleable.CornerDrawable_android_paddingStart, padding);
+        final int paddingTop = custom.getDimensionPixelSize(
+                R.styleable.CornerDrawable_android_paddingTop, padding);
+        final int paddingEnd = custom.getDimensionPixelSize(
+                R.styleable.CornerDrawable_android_paddingEnd, padding);
+        final int paddingBottom = custom.getDimensionPixelSize(
+                R.styleable.CornerDrawable_android_paddingBottom, padding);
+        custom.recycle();
+        if (cornerBezier >= 0 && cornerBezier <= 1)
+            mCornerBezier = cornerBezier;
+        mPaint.setStrokeWidth(mStrokeWidth);
+        switch (strokeLineCap) {
+            default:
+            case 0:
+                mPaint.setStrokeCap(Paint.Cap.BUTT);
+                break;
+            case 1:
+                mPaint.setStrokeCap(Paint.Cap.ROUND);
+                break;
+            case 2:
+                mPaint.setStrokeCap(Paint.Cap.SQUARE);
+                break;
         }
-        final float halfStokeSize = mStrokePaint != null ? mStrokePaint.getStrokeWidth() * 0.5f : 0;
-        float mContentRadius = this.mContentRadius > halfStokeSize ? this.mContentRadius : 0;
-        mPath.rewind();
-        if (mCornerHeight == 0) {
-            if (mContentRadius == 0) {
-                mTempRect.set(getBounds());
-                mPath.addRect(mTempRect, Path.Direction.CW);
-            } else {
-                mTempRect.set(getBounds());
-                mPath.addRoundRect(mTempRect, mContentRadius, mContentRadius, Path.Direction.CCW);
+        switch (strokeLineJoin) {
+            default:
+            case 0:
+                mPaint.setStrokeJoin(Paint.Join.MITER);
+                break;
+            case 1:
+                mPaint.setStrokeJoin(Paint.Join.ROUND);
+                break;
+            case 2:
+                mPaint.setStrokeJoin(Paint.Join.BEVEL);
+                break;
+        }
+        mPaint.setStrokeMiter(strokeMiterLimit);
+        if (dashWidth > 0 && dashGap > 0)
+            mPaint.setPathEffect(new DashPathEffect(new float[]{dashWidth, dashGap}, 0));
+        mContentPaddingRect.set(paddingStart, paddingTop, paddingEnd, paddingBottom);
+        calculateValue();
+    }
+
+    private void calculateValue() {
+        if (mCornerHeight <= 0) {
+            mPaddingRect.set(mContentPaddingRect.left,
+                    mContentPaddingRect.top,
+                    mContentPaddingRect.right,
+                    mContentPaddingRect.bottom);
+            mIntrinsicWidth = 0;
+            mIntrinsicHeight = 0;
+        } else {
+            final int direction = Compat.getAbsoluteGravity(mDirection,
+                    Compat.getLayoutDirection(this));
+            switch (direction) {
+                case Gravity.LEFT:
+                    mPaddingRect.set(mContentPaddingRect.left + mCornerHeight,
+                            mContentPaddingRect.top,
+                            mContentPaddingRect.right,
+                            mContentPaddingRect.bottom);
+                    //noinspection SuspiciousNameCombination
+                    mIntrinsicWidth = mCornerHeight;
+                    //noinspection SuspiciousNameCombination
+                    mIntrinsicHeight = mCornerWidth;
+                    break;
+                case Gravity.RIGHT:
+                    mPaddingRect.set(mContentPaddingRect.left,
+                            mContentPaddingRect.top,
+                            mContentPaddingRect.right + mCornerHeight,
+                            mContentPaddingRect.bottom);
+                    //noinspection SuspiciousNameCombination
+                    mIntrinsicWidth = mCornerHeight;
+                    //noinspection SuspiciousNameCombination
+                    mIntrinsicHeight = mCornerWidth;
+                    break;
+                case Gravity.BOTTOM:
+                    mPaddingRect.set(mContentPaddingRect.left,
+                            mContentPaddingRect.top,
+                            mContentPaddingRect.right,
+                            mContentPaddingRect.bottom + mCornerHeight);
+                    mIntrinsicWidth = mCornerWidth;
+                    mIntrinsicHeight = mCornerHeight;
+                    break;
+                default:
+                case Gravity.TOP:
+                    mPaddingRect.set(mContentPaddingRect.left,
+                            mContentPaddingRect.top + mCornerHeight,
+                            mContentPaddingRect.right,
+                            mContentPaddingRect.bottom);
+                    mIntrinsicWidth = mCornerWidth;
+                    mIntrinsicHeight = mCornerHeight;
+                    break;
             }
+
+        }
+    }
+
+    @Override
+    protected void onBoundsChange(Rect bounds) {
+        super.onBoundsChange(bounds);
+        updatePath();
+    }
+
+    private void updatePath() {
+        mPath.reset();
+        final float halfStokeSize = mStrokeWidth * 0.5f;
+        float mContentRadius = this.mContentRadius > halfStokeSize ? this.mContentRadius : 0;
+        if (mCornerHeight == 0) {
+            final Rect bounds = getBounds();
+            if (mContentRadius == 0)
+                mPath.addRect(bounds.left, bounds.top, bounds.right, bounds.bottom,
+                        Path.Direction.CW);
+            else
+                Compat.addRoundRect(mPath, bounds.left, bounds.top, bounds.right, bounds.bottom,
+                        mContentRadius, mContentRadius, Path.Direction.CCW);
         } else {
             final int width = getBounds().width();
             final int height = getBounds().height();
             if (mContentRadius == 0) {
-                switch (mDirection) {
+                final int direction = Compat.getAbsoluteGravity(mDirection,
+                        Compat.getLayoutDirection(this));
+                switch (direction) {
                     case Gravity.TOP:
                     case Gravity.BOTTOM:
                         if (height <= mCornerHeight) {
@@ -130,7 +285,9 @@ public class CornerDrawable extends Drawable {
                         break;
                 }
             } else {
-                switch (mDirection) {
+                final int direction = Compat.getAbsoluteGravity(mDirection,
+                        Compat.getLayoutDirection(this));
+                switch (direction) {
                     case Gravity.TOP:
                     case Gravity.BOTTOM:
                         if (height <= mCornerHeight) {
@@ -150,34 +307,21 @@ public class CornerDrawable extends Drawable {
                 }
             }
         }
-        if (haveFill) {
-            mFillPaint.setAlpha(currFillAlpha);
-            mFillPaint.setColor(mColor);
-            canvas.drawPath(mPath, mFillPaint);
-        }
-        if (haveStroke) {
-            mStrokePaint.setAlpha(currStrokeAlpha);
-            canvas.drawPath(mPath, mStrokePaint);
-        }
-    }
-
-    private int modulateAlpha(int alpha) {
-        int scale = mAlpha + (mAlpha >> 7);
-        return alpha * scale >> 8;
     }
 
     /**
      * 三角形
      */
-    @SuppressWarnings("all")
     private void makeTrianglePath() {
         final int width = getBounds().width();
         final int height = getBounds().height();
-        float mCornerWidth = (mDirection == Gravity.TOP || mDirection == Gravity.BOTTOM) ?
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
+        float mCornerWidth = (direction == Gravity.TOP || direction == Gravity.BOTTOM) ?
                 (width > this.mCornerWidth ? this.mCornerWidth : width) :
                 (height > this.mCornerWidth ? this.mCornerWidth : height);
         float margin;
-        switch (mDirection) {
+        switch (direction) {
             case Gravity.TOP:
                 if (width > mCornerWidth) {
                     margin = mCornerMargin <= 0 ? 0 : (mCornerMargin + mCornerWidth > width ? width - mCornerWidth : mCornerMargin);
@@ -187,12 +331,12 @@ public class CornerDrawable extends Drawable {
                             mCornerCenter.set(width * 0.5f, 0);
                             mCornerRight.set((width + mCornerWidth) * 0.5f, height);
                             break;
-                        case Gravity.LEFT:
+                        case Compat.START:
                             mCornerLeft.set(margin, height);
                             mCornerCenter.set(mCornerWidth * 0.5f + margin, 0);
                             mCornerRight.set(mCornerWidth + margin, height);
                             break;
-                        case Gravity.RIGHT:
+                        case Compat.END:
                             mCornerLeft.set(width - mCornerWidth - margin, height);
                             mCornerCenter.set(width - mCornerWidth * 0.5f - margin, 0);
                             mCornerRight.set(width - margin, height);
@@ -215,12 +359,12 @@ public class CornerDrawable extends Drawable {
                             mCornerCenter.set(width * 0.5f, height);
                             mCornerRight.set((width - mCornerWidth) * 0.5f, 0);
                             break;
-                        case Gravity.LEFT:
+                        case Compat.START:
                             mCornerLeft.set(width - margin, 0);
                             mCornerCenter.set(width - mCornerWidth * 0.5f - margin, height);
                             mCornerRight.set(width - mCornerWidth - margin, 0);
                             break;
-                        case Gravity.RIGHT:
+                        case Compat.END:
                             mCornerLeft.set(margin, 0);
                             mCornerCenter.set(mCornerWidth * 0.5f + margin, height);
                             mCornerRight.set(mCornerWidth + margin, 0);
@@ -243,12 +387,12 @@ public class CornerDrawable extends Drawable {
                             mCornerCenter.set(0, height * 0.5f);
                             mCornerRight.set(width, (height - mCornerWidth) * 0.5f);
                             break;
-                        case Gravity.LEFT:
+                        case Compat.START:
                             mCornerLeft.set(width, height - margin);
                             mCornerCenter.set(0, height - mCornerWidth * 0.5f - margin);
                             mCornerRight.set(width, height - mCornerWidth - margin);
                             break;
-                        case Gravity.RIGHT:
+                        case Compat.END:
                             mCornerLeft.set(width, mCornerWidth + margin);
                             mCornerCenter.set(0, mCornerWidth * 0.5f + margin);
                             mCornerRight.set(width, margin);
@@ -271,12 +415,12 @@ public class CornerDrawable extends Drawable {
                             mCornerCenter.set(width, height * 0.5f);
                             mCornerRight.set(0, (height + mCornerWidth) * 0.5f);
                             break;
-                        case Gravity.LEFT:
+                        case Compat.START:
                             mCornerLeft.set(0, margin);
                             mCornerCenter.set(width, mCornerWidth * 0.5f + margin);
                             mCornerRight.set(0, mCornerWidth + margin);
                             break;
-                        case Gravity.RIGHT:
+                        case Compat.END:
                             mCornerLeft.set(0, height - mCornerWidth - margin);
                             mCornerCenter.set(width, height - mCornerWidth * 0.5f - margin);
                             mCornerRight.set(0, height - margin);
@@ -293,21 +437,21 @@ public class CornerDrawable extends Drawable {
         }
     }
 
-    @SuppressWarnings("all")
     private void makeTriangleCornerPath() {
         final int width = getBounds().width();
         final int height = getBounds().height();
-        float mCornerWidth = (mDirection == Gravity.TOP || mDirection == Gravity.BOTTOM) ?
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
+        float mCornerWidth = (direction == Gravity.TOP || direction == Gravity.BOTTOM) ?
                 (width > this.mCornerWidth ? this.mCornerWidth : width) :
                 (height > this.mCornerWidth ? this.mCornerWidth : height);
-        float mCornerHeight = (mDirection == Gravity.TOP || mDirection == Gravity.BOTTOM) ? height : width;
-        final float strokeSize = mStrokePaint != null ? mStrokePaint.getStrokeWidth() : 0;
-        final float halfStokeSize = strokeSize * 0.5f;
+        float mCornerHeight = (direction == Gravity.TOP || direction == Gravity.BOTTOM) ? height : width;
+        final float halfStokeSize = mStrokeWidth * 0.5f;
         final float halfCornerWidth = mCornerWidth * 0.5f;
         final double temp = 2d * mCornerHeight * halfStokeSize / mCornerWidth;
         final float cornerStokeVertical = (float) (Math.sqrt(halfStokeSize * halfStokeSize + temp * temp));
         final float cornerStokeHorizontal = halfCornerWidth - mCornerWidth * (mCornerHeight - cornerStokeVertical - halfStokeSize) * 0.5f / mCornerHeight;
-        switch (mDirection) {
+        switch (direction) {
             case Gravity.TOP:
                 mPath.moveTo(mCornerLeft.x + cornerStokeHorizontal, mCornerLeft.y - halfStokeSize);
                 makeCornerPath(mCornerLeft.x + cornerStokeHorizontal, mCornerLeft.y - halfStokeSize,
@@ -338,12 +482,13 @@ public class CornerDrawable extends Drawable {
     /**
      * 矩形（三角形宽度小于等于矩形连接边）
      */
-    @SuppressWarnings("all")
     private void makeTriangleRectPath() {
         final int width = getBounds().width();
         final int height = getBounds().height();
-        final float halfStokeSize = mStrokePaint != null ? mStrokePaint.getStrokeWidth() * 0.5f : 0;
-        switch (mDirection) {
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
+        final float halfStokeSize = mStrokeWidth * 0.5f;
+        switch (direction) {
             case Gravity.TOP:
                 mPath.moveTo(halfStokeSize, mCornerHeight + halfStokeSize);
                 mCornerLeft.set(0, mCornerHeight);
@@ -366,8 +511,10 @@ public class CornerDrawable extends Drawable {
                 break;
             case Gravity.LEFT:
                 mPath.moveTo(mCornerHeight + halfStokeSize, height - halfStokeSize);
+                //noinspection SuspiciousNameCombination
                 mCornerLeft.set(mCornerHeight, height);
                 mCornerCenter.set(0, height * 0.5f);
+                //noinspection SuspiciousNameCombination
                 mCornerRight.set(mCornerHeight, 0);
                 makeTriangleRectCornerPath();
                 mPath.lineTo(width - halfStokeSize, halfStokeSize);
@@ -387,18 +534,19 @@ public class CornerDrawable extends Drawable {
         }
     }
 
-    @SuppressWarnings("all")
     private void makeTriangleRectCornerPath() {
         final int width = getBounds().width();
         final int height = getBounds().height();
-        final float strokeSize = mStrokePaint != null ? mStrokePaint.getStrokeWidth() : 0;
-        final float halfStokeSize = strokeSize * 0.5f;
-        final float mCornerWidth = (mDirection == Gravity.TOP || mDirection == Gravity.BOTTOM) ? width : height;
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
+        final float halfStokeSize = mStrokeWidth * 0.5f;
+        final float mCornerWidth = (direction == Gravity.TOP || direction == Gravity.BOTTOM) ? width : height;
         final float halfCornerWidth = mCornerWidth * 0.5f;
         final float cornerStokeVertical = (float) (Math.sqrt(halfCornerWidth * halfCornerWidth + mCornerHeight * mCornerHeight) * halfStokeSize / halfCornerWidth);
+        //noinspection UnnecessaryLocalVariable
         final float cornerXOffset = halfStokeSize;
         final float cornerYOffset = mCornerHeight * (halfCornerWidth - halfCornerWidth * (mCornerHeight - cornerStokeVertical) / mCornerHeight - halfStokeSize) / halfCornerWidth;
-        switch (mDirection) {
+        switch (direction) {
             case Gravity.TOP:
                 makeCornerPath(mCornerLeft.x + cornerXOffset, mCornerLeft.y + cornerYOffset,
                         mCornerCenter.x, mCornerCenter.y + cornerStokeVertical,
@@ -425,24 +573,24 @@ public class CornerDrawable extends Drawable {
     /**
      * 矩形
      */
-    @SuppressWarnings("all")
     private void makeRectPath() {
         final int width = getBounds().width();
         final int height = getBounds().height();
-        final float strokeSize = mStrokePaint != null ? mStrokePaint.getStrokeWidth() : 0;
-        final float halfStokeSize = strokeSize * 0.5f;
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
+        final float halfStokeSize = mStrokeWidth * 0.5f;
         float margin;
         float offset = 0;
-        switch (mDirection) {
+        switch (direction) {
             case Gravity.TOP:
                 margin = mCornerMargin <= 0 ? 0 : (mCornerMargin + mCornerWidth > width ? width - mCornerWidth : mCornerMargin);
                 switch (mLocation) {
                     case Gravity.CENTER:
                         break;
-                    case Gravity.LEFT:
+                    case Compat.START:
                         offset = -(width - mCornerWidth) * 0.5f + margin;
                         break;
-                    case Gravity.RIGHT:
+                    case Compat.END:
                         offset = (width - mCornerWidth) * 0.5f - margin;
                         break;
                 }
@@ -461,10 +609,10 @@ public class CornerDrawable extends Drawable {
                 switch (mLocation) {
                     case Gravity.CENTER:
                         break;
-                    case Gravity.LEFT:
+                    case Compat.START:
                         offset = -(height - mCornerWidth) * 0.5f + margin;
                         break;
-                    case Gravity.RIGHT:
+                    case Compat.END:
                         offset = (height - mCornerWidth) * 0.5f - margin;
                         break;
                 }
@@ -483,10 +631,10 @@ public class CornerDrawable extends Drawable {
                 switch (mLocation) {
                     case Gravity.CENTER:
                         break;
-                    case Gravity.LEFT:
+                    case Compat.START:
                         offset = -(width - mCornerWidth) * 0.5f + margin;
                         break;
-                    case Gravity.RIGHT:
+                    case Compat.END:
                         offset = (width - mCornerWidth) * 0.5f - margin;
                         break;
                 }
@@ -505,10 +653,10 @@ public class CornerDrawable extends Drawable {
                 switch (mLocation) {
                     case Gravity.CENTER:
                         break;
-                    case Gravity.LEFT:
+                    case Compat.START:
                         offset = -(height - mCornerWidth) * 0.5f + margin;
                         break;
-                    case Gravity.RIGHT:
+                    case Compat.END:
                         offset = (height - mCornerWidth) * 0.5f - margin;
                         break;
                 }
@@ -516,8 +664,10 @@ public class CornerDrawable extends Drawable {
                 mPath.lineTo(width - halfStokeSize, halfStokeSize);
                 mPath.lineTo(width - halfStokeSize, height - halfStokeSize);
                 mPath.lineTo(mCornerHeight + halfStokeSize, height - halfStokeSize);
+                //noinspection SuspiciousNameCombination
                 mCornerLeft.set(mCornerHeight, (height + mCornerWidth) * 0.5f);
                 mCornerCenter.set(0, height * 0.5f);
+                //noinspection SuspiciousNameCombination
                 mCornerRight.set(mCornerHeight, (height - mCornerWidth) * 0.5f);
                 makeRectCornerPath(offset);
                 mPath.close();
@@ -525,16 +675,17 @@ public class CornerDrawable extends Drawable {
         }
     }
 
-    @SuppressWarnings("all")
     private void makeRectCornerPath(float offset) {
-        final float strokeSize = mStrokePaint != null ? mStrokePaint.getStrokeWidth() : 0;
-        final float halfStokeSize = strokeSize * 0.5f;
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
+        final float halfStokeSize = mStrokeWidth * 0.5f;
         final float halfCornerWidth = mCornerWidth * 0.5f;
         final float cornerStokeVertical = (float) (Math.sqrt(halfCornerWidth * halfCornerWidth + mCornerHeight * mCornerHeight) * halfStokeSize / halfCornerWidth);
         final float cornerStokeHorizontal = halfCornerWidth - halfCornerWidth * (mCornerHeight - cornerStokeVertical) / mCornerHeight;
         final float cornerXOffset = cornerStokeHorizontal - halfCornerWidth * halfStokeSize / mCornerHeight;
+        //noinspection UnnecessaryLocalVariable
         final float cornerYOffset = halfStokeSize;
-        switch (mDirection) {
+        switch (direction) {
             case Gravity.TOP:
                 makeCornerPath(mCornerLeft.x + cornerXOffset + offset, mCornerLeft.y + cornerYOffset,
                         mCornerCenter.x + offset, mCornerCenter.y + cornerStokeVertical,
@@ -561,17 +712,18 @@ public class CornerDrawable extends Drawable {
     /**
      * 圆角矩形
      */
-    @SuppressWarnings("all")
     private void makeRoundRect() {
         final int width = getBounds().width();
         final int height = getBounds().height();
-        final float halfStokeSize = mStrokePaint != null ? mStrokePaint.getStrokeWidth() * 0.5f : 0;
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
+        final float halfStokeSize = mStrokeWidth * 0.5f;
         float maxContentRadius;
         float mContentRadius;
         float mCornerMove;
         float margin;
         float offset = 0;
-        switch (mDirection) {
+        switch (direction) {
             case Gravity.TOP:
                 maxContentRadius = (width < height - mCornerHeight ? width : height - mCornerHeight) * 0.5f;
                 mContentRadius = this.mContentRadius > maxContentRadius ? maxContentRadius : this.mContentRadius;
@@ -586,10 +738,10 @@ public class CornerDrawable extends Drawable {
                     switch (mLocation) {
                         case Gravity.CENTER:
                             break;
-                        case Gravity.LEFT:
+                        case Compat.START:
                             offset = -mCornerMove * 0.5f + margin;
                             break;
-                        case Gravity.RIGHT:
+                        case Compat.END:
                             offset = mCornerMove * 0.5f - margin;
                             break;
                     }
@@ -638,10 +790,10 @@ public class CornerDrawable extends Drawable {
                     switch (mLocation) {
                         case Gravity.CENTER:
                             break;
-                        case Gravity.LEFT:
+                        case Compat.START:
                             offset = -mCornerMove * 0.5f + margin;
                             break;
-                        case Gravity.RIGHT:
+                        case Compat.END:
                             offset = mCornerMove * 0.5f - margin;
                             break;
                     }
@@ -690,10 +842,10 @@ public class CornerDrawable extends Drawable {
                     switch (mLocation) {
                         case Gravity.CENTER:
                             break;
-                        case Gravity.LEFT:
+                        case Compat.START:
                             offset = mCornerMove * 0.5f - margin;
                             break;
-                        case Gravity.RIGHT:
+                        case Compat.END:
                             offset = -mCornerMove * 0.5f + margin;
                             break;
                     }
@@ -733,23 +885,27 @@ public class CornerDrawable extends Drawable {
                 mCornerMove = height - mContentRadius - mContentRadius - mCornerWidth;
                 mPath.moveTo(mCornerHeight + halfStokeSize, height - mContentRadius);
                 if (mCornerMove <= 0) {
+                    //noinspection SuspiciousNameCombination
                     mCornerLeft.set(mCornerHeight, height - mContentRadius);
                     mCornerCenter.set(0, height * 0.5f);
+                    //noinspection SuspiciousNameCombination
                     mCornerRight.set(mCornerHeight, mContentRadius);
                 } else {
                     margin = mCornerMargin <= 0 ? 0 : (mCornerMargin > mCornerMove ? mCornerMove : mCornerMargin);
                     switch (mLocation) {
                         case Gravity.CENTER:
                             break;
-                        case Gravity.LEFT:
+                        case Compat.START:
                             offset = mCornerMove * 0.5f - margin;
                             break;
-                        case Gravity.RIGHT:
+                        case Compat.END:
                             offset = -mCornerMove * 0.5f + margin;
                             break;
                     }
+                    //noinspection SuspiciousNameCombination
                     mCornerLeft.set(mCornerHeight, (height + mCornerWidth) * 0.5f + offset);
                     mCornerCenter.set(0, height * 0.5f + offset);
+                    //noinspection SuspiciousNameCombination
                     mCornerRight.set(mCornerHeight, (height - mCornerWidth) * 0.5f + offset);
                 }
                 makeRoundRectCornerPath();
@@ -782,21 +938,22 @@ public class CornerDrawable extends Drawable {
         }
     }
 
-    @SuppressWarnings("all")
     private void makeRoundRectCornerPath() {
-        final float strokeSize = mStrokePaint != null ? mStrokePaint.getStrokeWidth() : 0;
-        final float halfStokeSize = strokeSize * 0.5f;
-        final float mCornerWidth = (mDirection == Gravity.TOP || mDirection == Gravity.BOTTOM) ?
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
+        final float halfStokeSize = mStrokeWidth * 0.5f;
+        final float mCornerWidth = (direction == Gravity.TOP || direction == Gravity.BOTTOM) ?
                 mCornerRight.x - mCornerLeft.x < 0 ? mCornerLeft.x - mCornerRight.x : mCornerRight.x - mCornerLeft.x :
                 mCornerRight.y - mCornerLeft.y < 0 ? mCornerLeft.y - mCornerRight.y : mCornerRight.y - mCornerLeft.y;
-        if (mCornerWidth == 0 || mCornerWidth < strokeSize)
+        if (mCornerWidth == 0 || mCornerWidth < mStrokeWidth)
             return;
         final float halfCornerWidth = mCornerWidth * 0.5f;
         final float cornerStokeVertical = (float) (Math.sqrt(halfCornerWidth * halfCornerWidth + mCornerHeight * mCornerHeight) * halfStokeSize / halfCornerWidth);
         final float cornerStokeHorizontal = halfCornerWidth - halfCornerWidth * (mCornerHeight - cornerStokeVertical) / mCornerHeight;
         final float cornerXOffset = cornerStokeHorizontal - halfCornerWidth * halfStokeSize / mCornerHeight;
+        //noinspection UnnecessaryLocalVariable
         final float cornerYOffset = halfStokeSize;
-        switch (mDirection) {
+        switch (direction) {
             case Gravity.TOP:
                 makeCornerPath(mCornerLeft.x + cornerXOffset, mCornerLeft.y + cornerYOffset,
                         mCornerCenter.x, mCornerCenter.y + cornerStokeVertical,
@@ -820,10 +977,11 @@ public class CornerDrawable extends Drawable {
         }
     }
 
-    @SuppressWarnings("all")
-    protected void makeCornerPath(float leftX, float leftY,
-                                  float centerX, float centerY,
-                                  float rightX, float rightY) {
+    private void makeCornerPath(float leftX, float leftY,
+                                float centerX, float centerY,
+                                float rightX, float rightY) {
+        final int direction = Compat.getAbsoluteGravity(mDirection,
+                Compat.getLayoutDirection(this));
         mPath.lineTo(leftX, leftY);
         if (mCornerBezier <= 0) {
             mPath.lineTo(centerX, centerY);
@@ -842,7 +1000,7 @@ public class CornerDrawable extends Drawable {
         final float height = leftX == rightX ? (centerX > leftX ? centerX - leftX : leftX - centerX) : (centerY > leftY ? centerY - leftY : leftY - centerY);
         final float heightBezier = height * mCornerBezier;
         final float widthBezier = width * heightBezier / height;
-        switch (mDirection) {
+        switch (direction) {
             case Gravity.TOP:
                 mPath.lineTo(centerX - widthBezier * 0.5f, centerY + heightBezier);
                 mPath.quadTo(centerX, centerY, centerX + widthBezier * 0.5f, centerY + heightBezier);
@@ -868,29 +1026,76 @@ public class CornerDrawable extends Drawable {
     }
 
     @Override
+    public void draw(Canvas canvas) {
+        if (mPath.isEmpty())
+            return;
+        final int[] state = getState();
+        if (mStrokeColor == null) {
+            mPaint.setColor(DrawableHelper.getColor(mFillColor, state, mAlpha));
+            mPaint.setStyle(Paint.Style.FILL);
+            canvas.drawPath(mPath, mPaint);
+            return;
+        }
+        final int fillColor = DrawableHelper.getColor(mFillColor, state, mAlpha);
+        final int strokeColor = DrawableHelper.getColor(mStrokeColor, state, mAlpha);
+        if (fillColor == strokeColor) {
+            mPaint.setColor(fillColor);
+            mPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+            canvas.drawPath(mPath, mPaint);
+        } else {
+            if (mClipFill) {
+                final Rect bounds = getBounds();
+                final int layer = Compat.saveLayer(canvas,
+                        bounds.left, bounds.top, bounds.right, bounds.bottom, null);
+                mPaint.setColor(fillColor);
+                mPaint.setStyle(Paint.Style.FILL);
+                canvas.drawPath(mPath, mPaint);
+                if (mXfermode == null)
+                    mXfermode = new PorterDuffXfermode(PorterDuff.Mode.CLEAR);
+                final Xfermode old = mPaint.getXfermode();
+                mPaint.setXfermode(mXfermode);
+                mPaint.setColor(Color.BLACK);
+                mPaint.setStyle(Paint.Style.STROKE);
+                canvas.drawPath(mPath, mPaint);
+                mPaint.setXfermode(old);
+                canvas.restoreToCount(layer);
+                mPaint.setColor(strokeColor);
+                canvas.drawPath(mPath, mPaint);
+            } else {
+                mPaint.setColor(fillColor);
+                mPaint.setStyle(Paint.Style.FILL);
+                canvas.drawPath(mPath, mPaint);
+                mPaint.setColor(strokeColor);
+                mPaint.setStyle(Paint.Style.STROKE);
+                canvas.drawPath(mPath, mPaint);
+            }
+        }
+    }
+
+    @Override
+    public void setAlpha(int alpha) {
+        if (mAlpha == alpha)
+            return;
+        mAlpha = alpha;
+        invalidateSelf();
+    }
+
+    @Override
     public int getAlpha() {
         return mAlpha;
     }
 
     @Override
-    public void setAlpha(int alpha) {
-        if (alpha != mAlpha) {
-            mAlpha = alpha;
-            invalidateSelf();
-        }
-    }
-
-    @Override
-    public void setColorFilter(ColorFilter cf) {
-        mFillPaint.setColorFilter(cf);
-        if (mStrokePaint != null)
-            mStrokePaint.setColorFilter(cf);
+    public void setColorFilter(ColorFilter colorFilter) {
+        if (mPaint.getColorFilter() == colorFilter)
+            return;
+        mPaint.setColorFilter(colorFilter);
         invalidateSelf();
     }
 
     @Override
     public int getOpacity() {
-        return mAlpha == 255 ? PixelFormat.OPAQUE : PixelFormat.TRANSLUCENT;
+        return PixelFormat.TRANSLUCENT;
     }
 
     @Override
@@ -904,105 +1109,99 @@ public class CornerDrawable extends Drawable {
     }
 
     @Override
-    @SuppressWarnings("all")
+    public boolean isStateful() {
+        return (mFillColor != null && mFillColor.isStateful()) ||
+                (mStrokeColor != null && mStrokeColor.isStateful());
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    public void getOutline(Outline outline) {
+        if (mPath.isEmpty() || !mPath.isConvex()) {
+            super.getOutline(outline);
+            return;
+        }
+        final int[] state = getState();
+        final int fillColor = DrawableHelper.getColor(mFillColor, state, mAlpha);
+        final int strokeColor = DrawableHelper.getColor(mStrokeColor, state, mAlpha);
+        final int alpha = Math.max(Color.alpha(fillColor), Color.alpha(strokeColor));
+        outline.setConvexPath(mPath);
+        outline.setAlpha(alpha / 255f);
+    }
+
+    @Override
     public boolean getPadding(Rect padding) {
-        padding.set(mPaddingRect);
+        if (Compat.isLayoutDirectionLTR(this))
+            padding.set(mPaddingRect);
+        else
+            padding.set(mPaddingRect.right, mPaddingRect.top, mPaddingRect.left,
+                    mPaddingRect.bottom);
         return true;
     }
 
-    /**
-     * 计算必要的数据
-     */
-    @SuppressWarnings("all")
-    private void calculateValue() {
-        if (mCornerHeight <= 0) {
-            mPaddingRect.set(mContentPaddingRect.left,
-                    mContentPaddingRect.top,
-                    mContentPaddingRect.right,
-                    mContentPaddingRect.bottom);
-            mIntrinsicWidth = 0;
-            mIntrinsicHeight = 0;
-        } else {
-            switch (mDirection) {
-                case Gravity.LEFT:
-                    mPaddingRect.set(mContentPaddingRect.left + mCornerHeight,
-                            mContentPaddingRect.top,
-                            mContentPaddingRect.right,
-                            mContentPaddingRect.bottom);
-                    mIntrinsicWidth = mCornerHeight;
-                    mIntrinsicHeight = mCornerWidth;
-                    break;
-                case Gravity.RIGHT:
-                    mPaddingRect.set(mContentPaddingRect.left,
-                            mContentPaddingRect.top,
-                            mContentPaddingRect.right + mCornerHeight,
-                            mContentPaddingRect.bottom);
-                    mIntrinsicWidth = mCornerHeight;
-                    mIntrinsicHeight = mCornerWidth;
-                    break;
-                case Gravity.BOTTOM:
-                    mPaddingRect.set(mContentPaddingRect.left,
-                            mContentPaddingRect.top,
-                            mContentPaddingRect.right,
-                            mContentPaddingRect.bottom + mCornerHeight);
-                    mIntrinsicWidth = mCornerWidth;
-                    mIntrinsicHeight = mCornerHeight;
-                    break;
-                default:
-                case Gravity.TOP:
-                    mPaddingRect.set(mContentPaddingRect.left,
-                            mContentPaddingRect.top + mCornerHeight,
-                            mContentPaddingRect.right,
-                            mContentPaddingRect.bottom);
-                    mIntrinsicWidth = mCornerWidth;
-                    mIntrinsicHeight = mCornerHeight;
-                    break;
-            }
-
-        }
+    @Override
+    public boolean onLayoutDirectionChanged(int layoutDirection) {
+        return true;
     }
 
-
-    /**
-     * 设置颜色
-     *
-     * @param color 颜色
-     */
-    public void setColor(int color) {
-        if (mColor != color) {
-            mColor = color;
-            invalidateSelf();
-        }
+    @Override
+    protected boolean onStateChange(int[] state) {
+        return isStateful();
     }
 
     /**
-     * 设置尖角相对宽
+     * 获取尖角宽度
      *
-     * @param width 相对宽
+     * @return 尖角宽度
      */
-    public void setCornerWidth(int width) {
-        if (width >= 0 && mCornerWidth != width) {
-            mCornerWidth = width;
-            calculateValue();
-            invalidateSelf();
-            DrawableHelper.invalidateCallbackPadding(this);
-            DrawableHelper.requestCallbackLayout(this);
-        }
+    public int getCornerWidth() {
+        return mCornerWidth;
     }
 
     /**
-     * 设置尖角相对高
+     * 设置尖角宽度
      *
-     * @param height 相对高
+     * @param cornerWidth 尖角宽度
      */
-    public void setCornerHeight(int height) {
-        if (height >= 0 && mCornerHeight != height) {
-            mCornerHeight = height;
-            calculateValue();
-            invalidateSelf();
-            DrawableHelper.invalidateCallbackPadding(this);
-            DrawableHelper.requestCallbackLayout(this);
-        }
+    public void setCornerWidth(int cornerWidth) {
+        if (mCornerWidth == cornerWidth)
+            return;
+        mCornerWidth = cornerWidth;
+        calculateValue();
+        updatePath();
+        invalidateSelf();
+    }
+
+    /**
+     * 获取尖角高度
+     *
+     * @return 尖角高度
+     */
+    public int getCornerHeight() {
+        return mCornerHeight;
+    }
+
+    /**
+     * 设置尖角高度
+     *
+     * @param cornerHeight 尖角高度
+     */
+    public void setCornerHeight(int cornerHeight) {
+        if (mCornerHeight == cornerHeight)
+            return;
+        mCornerHeight = cornerHeight;
+        calculateValue();
+        updatePath();
+        invalidateSelf();
+    }
+
+    /**
+     * 获取贝塞尔尖角比例
+     *
+     * @return 贝塞尔尖角比例
+     */
+    public float getCornerBezier() {
+        return mCornerBezier;
     }
 
     /**
@@ -1011,10 +1210,20 @@ public class CornerDrawable extends Drawable {
      * @param cornerBezier 贝塞尔尖角高度占尖角高度百分比(0~1)，推荐值为0.25
      */
     public void setCornerBezier(float cornerBezier) {
-        if (mCornerBezier != cornerBezier) {
-            mCornerBezier = cornerBezier;
-            invalidateSelf();
-        }
+        if (mCornerBezier == cornerBezier)
+            return;
+        mCornerBezier = cornerBezier;
+        updatePath();
+        invalidateSelf();
+    }
+
+    /**
+     * 获取朝向
+     *
+     * @return 朝向
+     */
+    public int getDirection() {
+        return mDirection;
     }
 
     /**
@@ -1022,50 +1231,271 @@ public class CornerDrawable extends Drawable {
      *
      * @param direction 朝向
      */
-    @SuppressWarnings("all")
     public void setDirection(int direction) {
-        if (direction != Gravity.LEFT &&
+        if (direction != Compat.START &&
+                direction != Gravity.LEFT &&
                 direction != Gravity.TOP &&
+                direction != Compat.END &&
                 direction != Gravity.RIGHT &&
                 direction != Gravity.BOTTOM)
             return;
-        if (mDirection != direction) {
-            mDirection = direction;
-            calculateValue();
-            invalidateSelf();
-            DrawableHelper.invalidateCallbackPadding(this);
-            DrawableHelper.requestCallbackLayout(this);
-        }
-    }
-
-    /**
-     * 设置位置
-     *
-     * @param location 位置
-     */
-    @SuppressWarnings("all")
-    public void setLocation(int location) {
-        if (location != Gravity.LEFT &&
-                location != Gravity.CENTER &&
-                location != Gravity.RIGHT)
+        if (mDirection == direction)
             return;
-
-        if (mLocation != location) {
-            mLocation = location;
-            invalidateSelf();
-        }
+        mDirection = direction;
+        calculateValue();
+        updatePath();
+        invalidateSelf();
     }
 
     /**
-     * 设置尖角左右间隔
+     * 获取尖角位置
      *
-     * @param margin 左右间隔
+     * @return 尖角位置
      */
-    public void setCornerMargin(int margin) {
-        if (margin >= 0 && mCornerMargin != margin) {
-            mCornerMargin = margin;
-            invalidateSelf();
-        }
+    public int getLocation() {
+        return mLocation;
+    }
+
+    /**
+     * 获取尖角边缘间隔
+     *
+     * @return 尖角边缘间隔
+     */
+    public int getCornerMargin() {
+        return mCornerMargin;
+    }
+
+    /**
+     * 设置尖角位置
+     *
+     * @param location     尖角位置
+     * @param cornerMargin 尖角边缘间隔
+     */
+    public void setLocation(int location, int cornerMargin) {
+        if (location != Compat.START &&
+                location != Gravity.CENTER &&
+                location != Compat.END)
+            return;
+        if (mLocation == location && mCornerMargin == cornerMargin)
+            return;
+        mLocation = location;
+        mCornerMargin = cornerMargin;
+        calculateValue();
+        updatePath();
+        invalidateSelf();
+    }
+
+    /**
+     * 获取内容圆角半径
+     *
+     * @return 内容圆角半径
+     */
+    public float getContentRadius() {
+        return mContentRadius;
+    }
+
+    /**
+     * 设置内容圆角半径
+     *
+     * @param contentRadius 内容圆角半径
+     */
+    public void setContentRadius(float contentRadius) {
+        if (mContentRadius == contentRadius)
+            return;
+        mContentRadius = contentRadius;
+        calculateValue();
+        updatePath();
+        invalidateSelf();
+    }
+
+    /**
+     * 获取充填色
+     *
+     * @return 充填色
+     */
+    public ColorStateList getFillColor() {
+        return mFillColor;
+    }
+
+    /**
+     * 设置充填色
+     *
+     * @param color 充填色
+     */
+    public void setFillColor(ColorStateList color) {
+        if (mFillColor == color)
+            return;
+        mFillColor = color;
+        invalidateSelf();
+    }
+
+    /**
+     * 设置充填色
+     *
+     * @param color 充填色
+     */
+    public void setFillColor(int color) {
+        setFillColor(ColorStateList.valueOf(color));
+    }
+
+    /**
+     * 获取描边线
+     *
+     * @return 描边线
+     */
+    public float getStrokeWidth() {
+        return mStrokeWidth;
+    }
+
+    /**
+     * 设置描边线宽
+     *
+     * @param strokeWidth 描边线宽
+     */
+    public void setStrokeWidth(float strokeWidth) {
+        if (mStrokeWidth == strokeWidth)
+            return;
+        mStrokeWidth = strokeWidth;
+        mPaint.setStrokeWidth(mStrokeWidth);
+        calculateValue();
+        updatePath();
+        invalidateSelf();
+    }
+
+    /**
+     * 获取描边颜色
+     *
+     * @return 描边颜色
+     */
+    public ColorStateList getStrokeColor() {
+        return mStrokeColor;
+    }
+
+    /**
+     * 设置描边颜色
+     *
+     * @param strokeColor 描边颜色
+     */
+    public void setStrokeColor(ColorStateList strokeColor) {
+        if (mStrokeColor == strokeColor)
+            return;
+        mStrokeColor = strokeColor;
+        invalidateSelf();
+    }
+
+    /**
+     * 设置描边颜色
+     *
+     * @param strokeColor 描边颜色
+     */
+    public void setStrokeColor(int strokeColor) {
+        setStrokeColor(ColorStateList.valueOf(strokeColor));
+    }
+
+    /**
+     * Return the paint's Cap, controlling how the start and end of stroked
+     * lines and paths are treated.
+     *
+     * @return the line cap style for the paint, used whenever the paint's
+     * style is Stroke or StrokeAndFill.
+     */
+    public Paint.Cap getStrokeCap() {
+        return mPaint.getStrokeCap();
+    }
+
+    /**
+     * Set the paint's Cap.
+     *
+     * @param cap set the paint's line cap style, used whenever the paint's
+     *            style is Stroke or StrokeAndFill.
+     */
+    public void setStrokeCap(Paint.Cap cap) {
+        if (mPaint.getStrokeCap() == cap)
+            return;
+        mPaint.setStrokeCap(cap);
+        invalidateSelf();
+    }
+
+    /**
+     * Return the paint's stroke join type.
+     *
+     * @return the paint's Join.
+     */
+    public Paint.Join getStrokeJoin() {
+        return mPaint.getStrokeJoin();
+    }
+
+    /**
+     * Set the paint's Join.
+     *
+     * @param join set the paint's Join, used whenever the paint's style is
+     *             Stroke or StrokeAndFill.
+     */
+    public void setStrokeJoin(Paint.Join join) {
+        if (mPaint.getStrokeJoin() == join)
+            return;
+        mPaint.setStrokeJoin(join);
+        invalidateSelf();
+    }
+
+    /**
+     * Return the paint's stroke miter value. Used to control the behavior
+     * of miter joins when the joins angle is sharp.
+     *
+     * @return the paint's miter limit, used whenever the paint's style is
+     * Stroke or StrokeAndFill.
+     */
+    public float getStrokeMiter() {
+        return mPaint.getStrokeMiter();
+    }
+
+    /**
+     * Set the paint's stroke miter value. This is used to control the behavior
+     * of miter joins when the joins angle is sharp. This value must be >= 0.
+     *
+     * @param miter set the miter limit on the paint, used whenever the paint's
+     *              style is Stroke or StrokeAndFill.
+     */
+    public void setStrokeMiter(float miter) {
+        if (mPaint.getStrokeMiter() == miter)
+            return;
+        mPaint.setStrokeMiter(miter);
+        invalidateSelf();
+    }
+
+    /**
+     * Set stroke dash
+     *
+     * @param dashWidth Length of a dash in the stroke.
+     * @param dashGap   Gap between dashes in the stroke.
+     * @param phase     offset form start
+     */
+    public void setStrokeDash(float dashWidth, float dashGap, float phase) {
+        if (dashWidth <= 0 || dashGap <= 0)
+            return;
+        mPaint.setPathEffect(new DashPathEffect(new float[]{dashWidth, dashGap}, phase));
+        invalidateSelf();
+    }
+
+    /**
+     * 判断是否裁剪充填（描边与充填不覆盖）
+     *
+     * @return 是否裁剪充填
+     */
+    public boolean isClipFill() {
+        return mClipFill;
+    }
+
+    /**
+     * 设置是否裁剪充填
+     *
+     * @param clip 是否裁剪充填
+     */
+    public void setClipFill(boolean clip) {
+        if (mClipFill == clip)
+            return;
+        mClipFill = clip;
+        invalidateSelf();
     }
 
     /**
@@ -1079,9 +1509,8 @@ public class CornerDrawable extends Drawable {
     public void setPadding(int left, int top, int right, int bottom) {
         mContentPaddingRect.set(left, top, right, bottom);
         calculateValue();
+        updatePath();
         invalidateSelf();
-        DrawableHelper.invalidateCallbackPadding(this);
-        DrawableHelper.requestCallbackLayout(this);
     }
 
     /**
@@ -1090,44 +1519,8 @@ public class CornerDrawable extends Drawable {
      * @param padding Padding
      */
     public void setPadding(Rect padding) {
-        if (padding != null) {
-            setPadding(padding.left, padding.top, padding.right, padding.bottom);
-        }
-    }
-
-    /**
-     * 设置内容圆角半径
-     *
-     * @param contentRadius 内容圆角半径
-     */
-    public void setContentRadius(float contentRadius) {
-        if (contentRadius >= 0 && mContentRadius != contentRadius) {
-            mContentRadius = contentRadius;
-            invalidateSelf();
-        }
-    }
-
-    /**
-     * 设置描边
-     *
-     * @param width     描边线宽
-     * @param color     描边颜色
-     * @param dashWidth 虚线线宽
-     * @param dashGap   虚线间隔
-     */
-    public void setStroke(int width, int color, float dashWidth, float dashGap) {
-        if (mStrokePaint == null) {
-            mStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            mStrokePaint.setStyle(Paint.Style.STROKE);
-        }
-        mStrokePaint.setStrokeWidth(width);
-        mStrokePaint.setColor(color);
-
-        DashPathEffect e = null;
-        if (dashWidth > 0) {
-            e = new DashPathEffect(new float[]{dashWidth, dashGap}, 0);
-        }
-        mStrokePaint.setPathEffect(e);
-        invalidateSelf();
+        if (padding == null)
+            return;
+        setPadding(padding.left, padding.top, padding.right, padding.bottom);
     }
 }

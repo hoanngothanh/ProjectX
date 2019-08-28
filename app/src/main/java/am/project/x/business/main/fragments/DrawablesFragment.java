@@ -18,17 +18,17 @@ package am.project.x.business.main.fragments;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.Nullable;
+
 import am.project.x.R;
 import am.project.x.base.BaseFragment;
-import am.project.x.business.drawables.centerdrawable.CenterDrawableActivity;
-import am.project.x.business.drawables.combinationdrawable.CombinationDrawableActivity;
 import am.project.x.business.drawables.cornerdrawable.CornerDrawableActivity;
-import am.project.x.business.drawables.lineardrawable.LinearDrawableActivity;
+import am.project.x.business.drawables.framedrawable.FrameDrawableActivity;
+import am.project.x.business.drawables.griddrawable.GridDrawableActivity;
 import am.project.x.business.drawables.linedrawable.LineDrawableActivity;
 import am.project.x.business.drawables.loadingdrawable.LoadingDrawableActivity;
 import am.project.x.business.drawables.textdrawable.TextDrawableActivity;
@@ -48,11 +48,10 @@ public class DrawablesFragment extends BaseFragment implements View.OnClickListe
     @Override
     protected void initializeFragment(Activity activity, @Nullable Bundle savedInstanceState) {
         findViewById(R.id.drawable_btn_loading).setOnClickListener(this);
-        findViewById(R.id.drawable_btn_center).setOnClickListener(this);
-        findViewById(R.id.drawable_btn_combination).setOnClickListener(this);
         findViewById(R.id.drawable_btn_cornerdrawable).setOnClickListener(this);
+        findViewById(R.id.drawable_btn_framedrawable).setOnClickListener(this);
         findViewById(R.id.drawable_btn_linedrawable).setOnClickListener(this);
-        findViewById(R.id.drawable_btn_lineardrawable).setOnClickListener(this);
+        findViewById(R.id.drawable_btn_griddrawable).setOnClickListener(this);
         findViewById(R.id.drawable_btn_textdrawable).setOnClickListener(this);
     }
 
@@ -62,20 +61,17 @@ public class DrawablesFragment extends BaseFragment implements View.OnClickListe
             case R.id.drawable_btn_loading:
                 LoadingDrawableActivity.start(getActivity());
                 break;
-            case R.id.drawable_btn_center:
-                CenterDrawableActivity.start(getActivity());
-                break;
-            case R.id.drawable_btn_combination:
-                CombinationDrawableActivity.start(getActivity());
-                break;
             case R.id.drawable_btn_cornerdrawable:
                 CornerDrawableActivity.start(getActivity());
+                break;
+            case R.id.drawable_btn_framedrawable:
+                FrameDrawableActivity.start(getActivity());
                 break;
             case R.id.drawable_btn_linedrawable:
                 LineDrawableActivity.start(getActivity());
                 break;
-            case R.id.drawable_btn_lineardrawable:
-                LinearDrawableActivity.start(getActivity());
+            case R.id.drawable_btn_griddrawable:
+                GridDrawableActivity.start(getActivity());
                 break;
             case R.id.drawable_btn_textdrawable:
                 TextDrawableActivity.start(getActivity());

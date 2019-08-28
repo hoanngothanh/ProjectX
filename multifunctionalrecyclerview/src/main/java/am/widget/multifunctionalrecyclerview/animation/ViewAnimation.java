@@ -1,17 +1,18 @@
 package am.widget.multifunctionalrecyclerview.animation;
 
-import android.support.v4.view.ViewCompat;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
+
+import androidx.core.view.ViewCompat;
 
 
 /**
  * 基础View动画
  * Created by Alex on 2017/11/9.
  */
-@SuppressWarnings("all")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public abstract class ViewAnimation implements Runnable {
     private static final int DEFAULT_DURATION = 250;
     private final Animation mAnimation = new Animation();

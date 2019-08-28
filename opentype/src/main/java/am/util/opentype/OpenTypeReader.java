@@ -24,7 +24,6 @@ import java.io.InputStream;
  * Reads a OpenType font file.
  * Created by Alex on 2018/9/5.
  */
-@SuppressWarnings("all")
 public interface OpenTypeReader extends Closeable {
 
     /**
@@ -46,8 +45,7 @@ public interface OpenTypeReader extends Closeable {
     /**
      * Attempts to skip over {@code n} bytes of input discarding the
      * skipped bytes.
-     * <p>
-     * <p>
+     *
      * This method may skip over some smaller number of bytes, possibly zero.
      * This may result from any of a number of conditions; reaching end of
      * file before {@code n} bytes have been skipped is only one
@@ -59,6 +57,7 @@ public interface OpenTypeReader extends Closeable {
      * @return the actual number of bytes skipped.
      * @throws IOException if an I/O error occurs.
      */
+    @SuppressWarnings("UnusedReturnValue")
     long skip(long n) throws IOException;
 
     /**
@@ -120,6 +119,7 @@ public interface OpenTypeReader extends Closeable {
      *                                   {@code len} is negative, or {@code len} is greater than
      *                                   {@code b.length - off}
      */
+    @SuppressWarnings("UnusedReturnValue")
     int read(byte b[], int off, int len) throws IOException;
 
     /**
@@ -288,6 +288,7 @@ public interface OpenTypeReader extends Closeable {
      *                      two bytes.
      * @throws IOException  if an I/O error occurs.
      */
+    @SuppressWarnings("unused")
     float readFixed2Dot14() throws IOException;
 
     /**

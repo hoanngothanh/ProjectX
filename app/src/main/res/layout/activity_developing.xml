@@ -7,18 +7,12 @@
     android:orientation="vertical"
     tools:context=".business.developing.DevelopingActivity">
 
-    <android.support.v7.widget.Toolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/developing_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:title="@string/developing_label" />
-
-    <am.project.x.business.developing.display.DisplayRecyclerView
-        android:id="@+id/display_rv_content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:iacChangeAnimationsEnable="false" />
 
 </LinearLayout>

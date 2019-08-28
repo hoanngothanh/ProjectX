@@ -4,10 +4,11 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
+        //noinspection MinSdkTooLow
         minSdkVersion 4
         targetSdkVersion 28
-        versionCode 6
-        versionName "2.0.2"
+        versionCode 8
+        versionName "3.0.0"
     }
 }
 

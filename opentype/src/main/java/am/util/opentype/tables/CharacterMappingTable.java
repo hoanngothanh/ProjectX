@@ -17,6 +17,7 @@ package am.util.opentype.tables;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import am.util.opentype.OpenTypeReader;
@@ -29,7 +30,7 @@ import am.util.opentype.TableRecord;
  * encoding scheme.
  */
 @SuppressWarnings("unused")
-public class CharacterMappingTable {
+public class CharacterMappingTable extends BaseTable {
 
     private final int mVersion;
     private final int mNumTables;
@@ -37,6 +38,7 @@ public class CharacterMappingTable {
     private final SubTable mSubTable;
 
     public CharacterMappingTable(OpenTypeReader reader, TableRecord record) throws IOException {
+        super(record);
         if (reader == null || record == null || record.getTableTag() != TableRecord.TAG_CMAP)
             throw new IOException();
         reader.seek(record.getOffset());
@@ -315,16 +317,31 @@ public class CharacterMappingTable {
         return mSubTable;
     }
 
+    @Override
+    public int getHashCode() {
+        return Objects.hash(super.getHashCode(), mVersion, mNumTables, mEncodingRecords, mSubTable);
+    }
+
+    @Override
+    public String getString() {
+        return "CharacterMappingTable{" +
+                "record=" + String.valueOf(getTableRecord()) +
+                ", version=" + mVersion +
+                ", numTables=" + mNumTables +
+                ", encodingRecords=" + String.valueOf(mEncodingRecords) +
+                ", subTable=" + String.valueOf(mSubTable) +
+                '}';
+    }
+
     /**
      * Encoding record
      */
-    @SuppressWarnings("unused")
     public static class EncodingRecord {
         private final int mPlatformID;
         private final int mEncodingID;
         private final int mOffset;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public EncodingRecord(int platformID, int encodingID, int offset) {
             this.mPlatformID = platformID;
             this.mEncodingID = encodingID;
@@ -357,19 +374,43 @@ public class CharacterMappingTable {
         public int getOffset() {
             return mOffset;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EncodingRecord that = (EncodingRecord) o;
+            return mPlatformID == that.mPlatformID &&
+                    mEncodingID == that.mEncodingID &&
+                    mOffset == that.mOffset;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mPlatformID, mEncodingID, mOffset);
+        }
+
+        @Override
+        public String toString() {
+            return "EncodingRecord{" +
+                    "platformID=" + mPlatformID +
+                    ", encodingID=" + mEncodingID +
+                    ", offset=" + mOffset +
+                    '}';
+        }
     }
 
     /**
      * SubHeader Record
      */
-    @SuppressWarnings("unused")
     public static class SubHeaderRecord {
         private final int mFirstCode;
         private final int mEntryCount;
         private final int mIdDelta;
         private final int mIdRangeOffset;
 
-        @SuppressWarnings("all")
+
+        @SuppressWarnings("WeakerAccess")
         public SubHeaderRecord(int firstCode, int entryCount, int idDelta, int idRangeOffset) {
             mFirstCode = firstCode;
             mEntryCount = entryCount;
@@ -422,18 +463,43 @@ public class CharacterMappingTable {
         public int getIdRangeOffset() {
             return mIdRangeOffset;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SubHeaderRecord that = (SubHeaderRecord) o;
+            return mFirstCode == that.mFirstCode &&
+                    mEntryCount == that.mEntryCount &&
+                    mIdDelta == that.mIdDelta &&
+                    mIdRangeOffset == that.mIdRangeOffset;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mFirstCode, mEntryCount, mIdDelta, mIdRangeOffset);
+        }
+
+        @Override
+        public String toString() {
+            return "SubHeaderRecord{" +
+                    "firstCode=" + mFirstCode +
+                    ", entryCount=" + mEntryCount +
+                    ", idDelta=" + mIdDelta +
+                    ", idRangeOffset=" + mIdRangeOffset +
+                    '}';
+        }
     }
 
     /**
      * SequentialMapGroup Record
      */
-    @SuppressWarnings("unused")
     public static class SequentialMapGroupRecord {
         private final int mStartCharCode;
         private final int mEndCharCode;
         private final int mStartGlyphID;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SequentialMapGroupRecord(int startCharCode, int endCharCode, int startGlyphID) {
             mStartCharCode = startCharCode;
             mEndCharCode = endCharCode;
@@ -468,18 +534,41 @@ public class CharacterMappingTable {
         public int getStartGlyphID() {
             return mStartGlyphID;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SequentialMapGroupRecord that = (SequentialMapGroupRecord) o;
+            return mStartCharCode == that.mStartCharCode &&
+                    mEndCharCode == that.mEndCharCode &&
+                    mStartGlyphID == that.mStartGlyphID;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mStartCharCode, mEndCharCode, mStartGlyphID);
+        }
+
+        @Override
+        public String toString() {
+            return "SequentialMapGroupRecord{" +
+                    "startCharCode=" + mStartCharCode +
+                    ", endCharCode=" + mEndCharCode +
+                    ", startGlyphID=" + mStartGlyphID +
+                    '}';
+        }
     }
 
     /**
      * ConstantMapGroup Record
      */
-    @SuppressWarnings("unused")
     public static class ConstantMapGroupRecord {
         private final int mStartCharCode;
         private final int mEndCharCode;
         private final int mGlyphID;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public ConstantMapGroupRecord(int startCharCode, int endCharCode, int glyphID) {
             mStartCharCode = startCharCode;
             mEndCharCode = endCharCode;
@@ -514,12 +603,35 @@ public class CharacterMappingTable {
         public int getGlyphID() {
             return mGlyphID;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ConstantMapGroupRecord that = (ConstantMapGroupRecord) o;
+            return mStartCharCode == that.mStartCharCode &&
+                    mEndCharCode == that.mEndCharCode &&
+                    mGlyphID == that.mGlyphID;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mStartCharCode, mEndCharCode, mGlyphID);
+        }
+
+        @Override
+        public String toString() {
+            return "ConstantMapGroupRecord{" +
+                    "startCharCode=" + mStartCharCode +
+                    ", endCharCode=" + mEndCharCode +
+                    ", glyphID=" + mGlyphID +
+                    '}';
+        }
     }
 
     /**
      * VariationSelector Record
      */
-    @SuppressWarnings("unused")
     public static class VariationSelectorRecord {
         private final int mVarSelector;
         private final int mDefaultUVSOffset;
@@ -527,7 +639,7 @@ public class CharacterMappingTable {
         private final DefaultUVSTable mDefaultUVS;
         private final NonDefaultUVSTable mNonDefaultUVS;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public VariationSelectorRecord(int varSelector, int defaultUVSOffset,
                                        int nonDefaultUVSOffset, DefaultUVSTable defaultUVS,
                                        NonDefaultUVSTable nonDefaultUVS) {
@@ -582,17 +694,45 @@ public class CharacterMappingTable {
         public NonDefaultUVSTable getNonDefaultUVS() {
             return mNonDefaultUVS;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            VariationSelectorRecord that = (VariationSelectorRecord) o;
+            return mVarSelector == that.mVarSelector &&
+                    mDefaultUVSOffset == that.mDefaultUVSOffset &&
+                    mNonDefaultUVSOffset == that.mNonDefaultUVSOffset &&
+                    Objects.equals(mDefaultUVS, that.mDefaultUVS) &&
+                    Objects.equals(mNonDefaultUVS, that.mNonDefaultUVS);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mVarSelector, mDefaultUVSOffset, mNonDefaultUVSOffset,
+                    mDefaultUVS, mNonDefaultUVS);
+        }
+
+        @Override
+        public String toString() {
+            return "VariationSelectorRecord{" +
+                    "varSelector=" + mVarSelector +
+                    ", defaultUVSOffset=" + mDefaultUVSOffset +
+                    ", nonDefaultUVSOffset=" + mNonDefaultUVSOffset +
+                    ", defaultUVS=" + String.valueOf(mDefaultUVS) +
+                    ", nonDefaultUVS=" + String.valueOf(mNonDefaultUVS) +
+                    '}';
+        }
     }
 
     /**
      * Default UVS table
      */
-    @SuppressWarnings("unused")
     public static class DefaultUVSTable {
         private final int mNumUnicodeValueRanges;
         private final List<UnicodeRangeRecord> mRanges;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public DefaultUVSTable(int numUnicodeValueRanges, List<UnicodeRangeRecord> ranges) {
             mNumUnicodeValueRanges = numUnicodeValueRanges;
             mRanges = ranges;
@@ -615,17 +755,38 @@ public class CharacterMappingTable {
         public List<UnicodeRangeRecord> getRanges() {
             return mRanges;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DefaultUVSTable that = (DefaultUVSTable) o;
+            return mNumUnicodeValueRanges == that.mNumUnicodeValueRanges &&
+                    Objects.equals(mRanges, that.mRanges);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mNumUnicodeValueRanges, mRanges);
+        }
+
+        @Override
+        public String toString() {
+            return "DefaultUVSTable{" +
+                    "numUnicodeValueRanges=" + mNumUnicodeValueRanges +
+                    ", ranges=" + String.valueOf(mRanges) +
+                    '}';
+        }
     }
 
     /**
      * UnicodeRange Record
      */
-    @SuppressWarnings("unused")
     public static class UnicodeRangeRecord {
         private final int mStartUnicodeValue;
         private final int mAdditionalCount;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public UnicodeRangeRecord(int startUnicodeValue, int additionalCount) {
             mStartUnicodeValue = startUnicodeValue;
             mAdditionalCount = additionalCount;
@@ -648,17 +809,38 @@ public class CharacterMappingTable {
         public int getAdditionalCount() {
             return mAdditionalCount;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UnicodeRangeRecord that = (UnicodeRangeRecord) o;
+            return mStartUnicodeValue == that.mStartUnicodeValue &&
+                    mAdditionalCount == that.mAdditionalCount;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mStartUnicodeValue, mAdditionalCount);
+        }
+
+        @Override
+        public String toString() {
+            return "UnicodeRangeRecord{" +
+                    "startUnicodeValue=" + mStartUnicodeValue +
+                    ", additionalCount=" + mAdditionalCount +
+                    '}';
+        }
     }
 
     /**
      * Non-Default UVS table
      */
-    @SuppressWarnings("unused")
     public static class NonDefaultUVSTable {
         private final int mNumUVSMappings;
         private final List<UVSMappingRecord> mUvsMappings;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public NonDefaultUVSTable(int numUVSMappings, List<UVSMappingRecord> uvsMappings) {
             mNumUVSMappings = numUVSMappings;
             mUvsMappings = uvsMappings;
@@ -681,17 +863,38 @@ public class CharacterMappingTable {
         public List<UVSMappingRecord> getUvsMappings() {
             return mUvsMappings;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            NonDefaultUVSTable that = (NonDefaultUVSTable) o;
+            return mNumUVSMappings == that.mNumUVSMappings &&
+                    Objects.equals(mUvsMappings, that.mUvsMappings);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mNumUVSMappings, mUvsMappings);
+        }
+
+        @Override
+        public String toString() {
+            return "NonDefaultUVSTable{" +
+                    "numUVSMappings=" + mNumUVSMappings +
+                    ", uvsMappings=" + String.valueOf(mUvsMappings) +
+                    '}';
+        }
     }
 
     /**
      * UVSMapping Record
      */
-    @SuppressWarnings("unused")
     public static class UVSMappingRecord {
         private final int mUnicodeValue;
         private final int mGlyphID;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public UVSMappingRecord(int unicodeValue, int glyphID) {
             mUnicodeValue = unicodeValue;
             mGlyphID = glyphID;
@@ -714,16 +917,37 @@ public class CharacterMappingTable {
         public int getGlyphID() {
             return mGlyphID;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UVSMappingRecord that = (UVSMappingRecord) o;
+            return mUnicodeValue == that.mUnicodeValue &&
+                    mGlyphID == that.mGlyphID;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mUnicodeValue, mGlyphID);
+        }
+
+        @Override
+        public String toString() {
+            return "UVSMappingRecord{" +
+                    "unicodeValue=" + mUnicodeValue +
+                    ", glyphID=" + mGlyphID +
+                    '}';
+        }
     }
 
     /**
      * Sub Table
      */
-    @SuppressWarnings("unused")
     public static class SubTable {
         private final int format;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable(int format) {
             this.format = format;
         }
@@ -736,18 +960,37 @@ public class CharacterMappingTable {
         public int getFormat() {
             return format;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SubTable subTable = (SubTable) o;
+            return format == subTable.format;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(format);
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable{" +
+                    "format=" + format +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 0
      */
-    @SuppressWarnings("unused")
     public static class SubTable0 extends SubTable {
         private final int mLength;
         private final int mLanguage;
         private final int[] mGlyphIds;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable0(int format, int length, int language, int[] glyphIds) {
             super(format);
             mLength = length;
@@ -782,12 +1025,39 @@ public class CharacterMappingTable {
         public int[] getGlyphIds() {
             return mGlyphIds;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable0)) return false;
+            if (!super.equals(o)) return false;
+            SubTable0 subTable0 = (SubTable0) o;
+            return mLength == subTable0.mLength &&
+                    mLanguage == subTable0.mLanguage &&
+                    Arrays.equals(mGlyphIds, subTable0.mGlyphIds);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(super.hashCode(), mLength, mLanguage);
+            result = 31 * result + Arrays.hashCode(mGlyphIds);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable0{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", language=" + mLanguage +
+                    ", glyphIds=" + Arrays.toString(mGlyphIds) +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 2
      */
-    @SuppressWarnings("unused")
     public static class SubTable2 extends SubTable {
         private final int mLength;
         private final int mLanguage;
@@ -795,7 +1065,7 @@ public class CharacterMappingTable {
         private final List<SubHeaderRecord> mSubHeaders;
         private final int[] mGlyphIndexArray;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable2(int format, int length, int language, int[] subHeaderKeys,
                          List<SubHeaderRecord> subHeaders, int[] glyphIndexArray) {
             super(format);
@@ -852,12 +1122,44 @@ public class CharacterMappingTable {
         public int[] getGlyphIndexArray() {
             return mGlyphIndexArray;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable2)) return false;
+            if (!super.equals(o)) return false;
+            SubTable2 subTable2 = (SubTable2) o;
+            return mLength == subTable2.mLength &&
+                    mLanguage == subTable2.mLanguage &&
+                    Arrays.equals(mSubHeaderKeys, subTable2.mSubHeaderKeys) &&
+                    Objects.equals(mSubHeaders, subTable2.mSubHeaders) &&
+                    Arrays.equals(mGlyphIndexArray, subTable2.mGlyphIndexArray);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(super.hashCode(), mLength, mLanguage, mSubHeaders);
+            result = 31 * result + Arrays.hashCode(mSubHeaderKeys);
+            result = 31 * result + Arrays.hashCode(mGlyphIndexArray);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable2{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", language=" + mLanguage +
+                    ", subHeaderKeys=" + Arrays.toString(mSubHeaderKeys) +
+                    ", subHeaders=" + String.valueOf(mSubHeaders) +
+                    ", glyphIndexArray=" + Arrays.toString(mGlyphIndexArray) +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 4
      */
-    @SuppressWarnings("unused")
     public static class SubTable4 extends SubTable {
         private final int mLength;
         private final int mLanguage;
@@ -871,7 +1173,7 @@ public class CharacterMappingTable {
         private final int[] mIdRangeOffset;
         private final int[] mGlyphIdArray;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable4(int format, int length, int language, int segCountX2, int searchRange,
                          int entrySelector, int rangeShift, int[] endCode, int[] startCode,
                          int[] idDelta, int[] idRangeOffset, int[] glyphIdArray) {
@@ -988,12 +1290,60 @@ public class CharacterMappingTable {
         public int[] getGlyphIdArray() {
             return mGlyphIdArray;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable4)) return false;
+            if (!super.equals(o)) return false;
+            SubTable4 subTable4 = (SubTable4) o;
+            return mLength == subTable4.mLength &&
+                    mLanguage == subTable4.mLanguage &&
+                    mSegCountX2 == subTable4.mSegCountX2 &&
+                    mSearchRange == subTable4.mSearchRange &&
+                    mEntrySelector == subTable4.mEntrySelector &&
+                    mRangeShift == subTable4.mRangeShift &&
+                    Arrays.equals(mEndCode, subTable4.mEndCode) &&
+                    Arrays.equals(mStartCode, subTable4.mStartCode) &&
+                    Arrays.equals(mIdDelta, subTable4.mIdDelta) &&
+                    Arrays.equals(mIdRangeOffset, subTable4.mIdRangeOffset) &&
+                    Arrays.equals(mGlyphIdArray, subTable4.mGlyphIdArray);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(super.hashCode(), mLength, mLanguage, mSegCountX2,
+                    mSearchRange, mEntrySelector, mRangeShift);
+            result = 31 * result + Arrays.hashCode(mEndCode);
+            result = 31 * result + Arrays.hashCode(mStartCode);
+            result = 31 * result + Arrays.hashCode(mIdDelta);
+            result = 31 * result + Arrays.hashCode(mIdRangeOffset);
+            result = 31 * result + Arrays.hashCode(mGlyphIdArray);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable4{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", language=" + mLanguage +
+                    ", segCountX2=" + mSegCountX2 +
+                    ", searchRange=" + mSearchRange +
+                    ", entrySelector=" + mEntrySelector +
+                    ", rangeShift=" + mRangeShift +
+                    ", endCode=" + Arrays.toString(mEndCode) +
+                    ", startCode=" + Arrays.toString(mStartCode) +
+                    ", idDelta=" + Arrays.toString(mIdDelta) +
+                    ", idRangeOffset=" + Arrays.toString(mIdRangeOffset) +
+                    ", glyphIdArray=" + Arrays.toString(mGlyphIdArray) +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 6
      */
-    @SuppressWarnings("unused")
     public static class SubTable6 extends SubTable {
         private final int mLength;
         private final int mLanguage;
@@ -1001,7 +1351,7 @@ public class CharacterMappingTable {
         private final int mEntryCount;
         private final int[] mGlyphIdArray;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable6(int format, int length, int language, int firstCode, int entryCount,
                          int[] glyphIdArray) {
             super(format);
@@ -1057,12 +1407,44 @@ public class CharacterMappingTable {
         public int[] getGlyphIdArray() {
             return mGlyphIdArray;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable6)) return false;
+            if (!super.equals(o)) return false;
+            SubTable6 subTable6 = (SubTable6) o;
+            return mLength == subTable6.mLength &&
+                    mLanguage == subTable6.mLanguage &&
+                    mFirstCode == subTable6.mFirstCode &&
+                    mEntryCount == subTable6.mEntryCount &&
+                    Arrays.equals(mGlyphIdArray, subTable6.mGlyphIdArray);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(super.hashCode(), mLength, mLanguage, mFirstCode,
+                    mEntryCount);
+            result = 31 * result + Arrays.hashCode(mGlyphIdArray);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable6{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", language=" + mLanguage +
+                    ", firstCode=" + mFirstCode +
+                    ", entryCount=" + mEntryCount +
+                    ", glyphIdArray=" + Arrays.toString(mGlyphIdArray) +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 8
      */
-    @SuppressWarnings("unused")
     public static class SubTable8 extends SubTable {
         private final int mLength;
         private final int mLanguage;
@@ -1070,7 +1452,7 @@ public class CharacterMappingTable {
         private final int mNumGroups;
         private final List<SequentialMapGroupRecord> mGroups;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable8(int format, int length, int language, int[] is32, int numGroups,
                          List<SequentialMapGroupRecord> groups) {
             super(format);
@@ -1127,12 +1509,43 @@ public class CharacterMappingTable {
         public List<SequentialMapGroupRecord> getGroups() {
             return mGroups;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable8)) return false;
+            if (!super.equals(o)) return false;
+            SubTable8 subTable8 = (SubTable8) o;
+            return mLength == subTable8.mLength &&
+                    mLanguage == subTable8.mLanguage &&
+                    mNumGroups == subTable8.mNumGroups &&
+                    Arrays.equals(mIs32, subTable8.mIs32) &&
+                    Objects.equals(mGroups, subTable8.mGroups);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(super.hashCode(), mLength, mLanguage, mNumGroups, mGroups);
+            result = 31 * result + Arrays.hashCode(mIs32);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable8{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", language=" + mLanguage +
+                    ", is32=" + Arrays.toString(mIs32) +
+                    ", numGroups=" + mNumGroups +
+                    ", groups=" + String.valueOf(mGroups) +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 10
      */
-    @SuppressWarnings("unused")
     public static class SubTable10 extends SubTable {
         private final int mLength;
         private final int mLanguage;
@@ -1140,7 +1553,7 @@ public class CharacterMappingTable {
         private final int mNumChars;
         private final int[] mGlyphs;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable10(int format, int length, int language, int startCharCode, int numChars,
                           int[] glyphs) {
             super(format);
@@ -1196,19 +1609,51 @@ public class CharacterMappingTable {
         public int[] getGlyphs() {
             return mGlyphs;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable10)) return false;
+            if (!super.equals(o)) return false;
+            SubTable10 that = (SubTable10) o;
+            return mLength == that.mLength &&
+                    mLanguage == that.mLanguage &&
+                    mStartCharCode == that.mStartCharCode &&
+                    mNumChars == that.mNumChars &&
+                    Arrays.equals(mGlyphs, that.mGlyphs);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(super.hashCode(), mLength, mLanguage, mStartCharCode,
+                    mNumChars);
+            result = 31 * result + Arrays.hashCode(mGlyphs);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable10{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", language=" + mLanguage +
+                    ", startCharCode=" + mStartCharCode +
+                    ", numChars=" + mNumChars +
+                    ", glyphs=" + Arrays.toString(mGlyphs) +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 12
      */
-    @SuppressWarnings("unused")
     public static class SubTable12 extends SubTable {
         private final int mLength;
         private final int mLanguage;
         private final int mNumGroups;
         private final List<SequentialMapGroupRecord> mGroups;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable12(int format, int length, int language, int numGroups,
                           List<SequentialMapGroupRecord> groups) {
             super(format);
@@ -1254,19 +1699,46 @@ public class CharacterMappingTable {
         public List<SequentialMapGroupRecord> getGroups() {
             return mGroups;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable12)) return false;
+            if (!super.equals(o)) return false;
+            SubTable12 that = (SubTable12) o;
+            return mLength == that.mLength &&
+                    mLanguage == that.mLanguage &&
+                    mNumGroups == that.mNumGroups &&
+                    Objects.equals(mGroups, that.mGroups);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), mLength, mLanguage, mNumGroups, mGroups);
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable12{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", language=" + mLanguage +
+                    ", numGroups=" + mNumGroups +
+                    ", groups=" + String.valueOf(mGroups) +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 13
      */
-    @SuppressWarnings("unused")
     public static class SubTable13 extends SubTable {
         private final int mLength;
         private final int mLanguage;
         private final int mNumGroups;
         private final List<ConstantMapGroupRecord> mGroups;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable13(int format, int length, int language, int numGroups,
                           List<ConstantMapGroupRecord> groups) {
             super(format);
@@ -1312,18 +1784,45 @@ public class CharacterMappingTable {
         public List<ConstantMapGroupRecord> getGroups() {
             return mGroups;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable13)) return false;
+            if (!super.equals(o)) return false;
+            SubTable13 that = (SubTable13) o;
+            return mLength == that.mLength &&
+                    mLanguage == that.mLanguage &&
+                    mNumGroups == that.mNumGroups &&
+                    Objects.equals(mGroups, that.mGroups);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), mLength, mLanguage, mNumGroups, mGroups);
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable13{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", language=" + mLanguage +
+                    ", numGroups=" + mNumGroups +
+                    ", groups=" + String.valueOf(mGroups) +
+                    '}';
+        }
     }
 
     /**
      * Sub Table Format 14
      */
-    @SuppressWarnings("unused")
     public static class SubTable14 extends SubTable {
         private final int mLength;
         private final int mNumVarSelectorRecords;
         private final List<VariationSelectorRecord> mVarSelectors;
 
-        @SuppressWarnings("all")
+        @SuppressWarnings("WeakerAccess")
         public SubTable14(int format, int length, int numVarSelectorRecords,
                           List<VariationSelectorRecord> varSelectors) {
             super(format);
@@ -1357,6 +1856,32 @@ public class CharacterMappingTable {
          */
         public List<VariationSelectorRecord> getVarSelectors() {
             return mVarSelectors;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SubTable14)) return false;
+            if (!super.equals(o)) return false;
+            SubTable14 that = (SubTable14) o;
+            return mLength == that.mLength &&
+                    mNumVarSelectorRecords == that.mNumVarSelectorRecords &&
+                    Objects.equals(mVarSelectors, that.mVarSelectors);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), mLength, mNumVarSelectorRecords, mVarSelectors);
+        }
+
+        @Override
+        public String toString() {
+            return "SubTable14{" +
+                    "format=" + getFormat() +
+                    ", length=" + mLength +
+                    ", numVarSelectorRecords=" + mNumVarSelectorRecords +
+                    ", varSelectors=" + String.valueOf(mVarSelectors) +
+                    '}';
         }
     }
 }

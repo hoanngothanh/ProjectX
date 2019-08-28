@@ -20,9 +20,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Build;
-import android.support.annotation.IntDef;
-import android.support.annotation.Nullable;
-import android.support.v7.widget.LinearLayoutManager;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -32,6 +29,9 @@ import java.lang.annotation.RetentionPolicy;
 
 import am.widget.itemanimatorcontrollablerecyclerview.ItemAnimatorControllableRecyclerView;
 import am.widget.multifunctionalrecyclerview.layoutmanager.PagingLayoutManager;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 
 /**
@@ -303,7 +303,7 @@ public class ScrollbarRecyclerView extends ItemAnimatorControllableRecyclerView 
     /**
      * 滚动条
      */
-    @SuppressWarnings("all")
+    @SuppressWarnings("WeakerAccess")
     public static abstract class Scrollbar {
 
         public static final int SHOW_NONE = 0;// 不显示

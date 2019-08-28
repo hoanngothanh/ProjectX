@@ -22,8 +22,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.support.annotation.IntDef;
-import android.support.annotation.Nullable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -33,12 +31,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 import am.widget.multifunctionalrecyclerview.R;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 
 /**
  * 默认的滚动条
  * Created by Alex on 2017/11/1.
  */
-@SuppressWarnings("all")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class DefaultScrollbar extends ScrollbarRecyclerView.Scrollbar {
 
     public static final int GRAVITY_CENTER = 0;

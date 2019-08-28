@@ -16,174 +16,157 @@
 
 package am.drawable;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.content.res.ColorStateList;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorFilter;
+import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.StateListDrawable;
+import android.os.Build;
+import android.util.AttributeSet;
 import android.view.Gravity;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.IOException;
+
+import am.widget.R;
 
 /**
  * 横线Drawable
  * 支持上下左右
  * Created by Alex on 2015/9/26.
  */
-@SuppressWarnings("all")
+@SuppressWarnings({"NullableProblems", "unused", "WeakerAccess"})
 public class LineDrawable extends Drawable {
+
     private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Rect mRect = new Rect();
-    private int mBackgroundColor;
-    private int mLineColor;
-    private int mLineSize;
+    private final RectF mLine = new RectF();
+    private int mAlpha = 0xFF;
+    private ColorStateList mBackgroundColor;
+    private ColorStateList mLineColor;
+    private float mLineSize;
     private int mGravity;
 
-    public LineDrawable(int lineColor, int lineSize) {
+    public LineDrawable() {
+        this(Color.BLACK, 1);
+    }
+
+    public LineDrawable(int lineColor, float lineSize) {
         this(0x00000000, lineColor, lineSize);
     }
 
-    public LineDrawable(int backgroundColor, int lineColor, int lineSize) {
-        this(backgroundColor, lineColor, lineSize, Gravity.BOTTOM);
+    public LineDrawable(int backgroundColor, int lineColor, float lineSize) {
+        this(backgroundColor, lineColor, lineSize, Gravity.NO_GRAVITY);
     }
 
-    public LineDrawable(int backgroundColor, int lineColor, int lineSize, int gravity) {
-        setBackground(backgroundColor);
-        setLineColor(lineColor);
-        setLineSize(lineSize);
-        setGravity(gravity);
+    public LineDrawable(int backgroundColor, int lineColor, float lineSize, int gravity) {
+        this(ColorStateList.valueOf(backgroundColor), ColorStateList.valueOf(lineColor),
+                lineSize, gravity);
     }
 
-    /**
-     * 获取StateListDrawable
-     *
-     * @param backgroundColor 背景色
-     * @param normalColor     普通情况线条颜色
-     * @param focusColor      选中情况线条颜色
-     * @param lineSize        线条粗细
-     * @return StateListDrawable
-     */
-    public static StateListDrawable getLineStateListDrawable(int backgroundColor, int normalColor, int focusColor, int lineSize) {
-        return getLineStateListDrawable(backgroundColor, normalColor, focusColor, lineSize, Gravity.BOTTOM);
-    }
-
-    /**
-     * 获取StateListDrawable
-     *
-     * @param backgroundColor 背景色
-     * @param normalColor     普通情况线条颜色
-     * @param focusColor      选中情况线条颜色
-     * @param lineSize        线条粗细
-     * @param gravity         布局
-     * @return StateListDrawable
-     */
-    public static StateListDrawable getLineStateListDrawable(int backgroundColor, int normalColor, int focusColor, int lineSize, int gravity) {
-        StateListDrawable drawable = new StateListDrawable();
-        LineDrawable focus = new LineDrawable(backgroundColor, focusColor, lineSize, gravity);
-        LineDrawable normal = new LineDrawable(backgroundColor, normalColor, lineSize, gravity);
-        drawable.addState(new int[]{android.R.attr.state_enabled, android.R.attr.state_focused}, focus);
-        drawable.addState(new int[]{android.R.attr.state_focused}, focus);
-        drawable.addState(new int[]{}, normal);
-        return drawable;
+    public LineDrawable(ColorStateList backgroundColor, ColorStateList lineColor, float lineSize,
+                        int gravity) {
+        mBackgroundColor = backgroundColor;
+        mLineColor = lineColor;
+        mLineSize = lineSize;
+        mGravity = gravity;
     }
 
     @Override
-    @SuppressWarnings("all")
-    public void draw(Canvas canvas) {
-        final Rect bounds = getBounds();
+    public void inflate(Resources resources, XmlPullParser parser, AttributeSet attrs,
+                        Resources.Theme theme)
+            throws XmlPullParserException, IOException {
+        super.inflate(resources, parser, attrs, theme);
+        final TypedArray custom = DrawableHelper.obtainAttributes(resources, theme, attrs,
+                R.styleable.LineDrawable);
+        final ColorStateList backgroundColor =
+                custom.getColorStateList(R.styleable.LineDrawable_android_background);
+        final ColorStateList lineColor =
+                custom.getColorStateList(R.styleable.LineDrawable_android_color);
+        mLineSize = custom.getDimension(R.styleable.LineDrawable_android_width, 0);
+        mGravity = custom.getInt(R.styleable.LineDrawable_android_gravity, Gravity.NO_GRAVITY);
+        custom.recycle();
+        if (backgroundColor != null)
+            mBackgroundColor = backgroundColor;
+        if (lineColor != null)
+            mLineColor = lineColor;
+    }
+
+    @Override
+    protected void onBoundsChange(Rect bounds) {
+        super.onBoundsChange(bounds);
+        updateLocation(bounds);
+    }
+
+    @SuppressLint("RtlHardcoded")
+    private void updateLocation(Rect bounds) {
+        mLine.setEmpty();
         if (bounds == null)
             return;
+        if (mLineSize <= 0)
+            return;
+        final float half = mLineSize * 0.5f;
         switch (mGravity) {
             default:
-            case Gravity.BOTTOM:
-                mRect.set(bounds.left, bounds.top, bounds.right, bounds.bottom - mLineSize);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.left, bounds.bottom - mLineSize, bounds.right, bounds.bottom);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
-                break;
             case Gravity.TOP:
-                mRect.set(bounds.left, bounds.top + mLineSize, bounds.right, bounds.bottom);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.left, bounds.top, bounds.right, bounds.top + mLineSize);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
+                mLine.set(bounds.left, bounds.top, bounds.right, bounds.top + mLineSize);
+                break;
+            case Gravity.BOTTOM:
+                mLine.set(bounds.left, bounds.bottom - mLineSize, bounds.right, bounds.bottom);
                 break;
             case Gravity.LEFT:
-                mRect.set(bounds.left + mLineSize, bounds.top, bounds.right, bounds.bottom);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.left, bounds.top, bounds.left + mLineSize, bounds.bottom);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
+                mLine.set(bounds.left, bounds.top, bounds.left + mLineSize, bounds.bottom);
                 break;
             case Gravity.RIGHT:
-                mRect.set(bounds.left, bounds.top, bounds.right - mLineSize, bounds.bottom);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.right - mLineSize, bounds.top, bounds.right, bounds.bottom);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
+                mLine.set(bounds.right - mLineSize, bounds.top, bounds.right, bounds.bottom);
                 break;
             case Gravity.CENTER_HORIZONTAL:
-                mRect.set(bounds.left, bounds.top, bounds.right, bounds.centerY());
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.left, bounds.centerY() + mLineSize, bounds.right, bounds.bottom);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.left, bounds.centerY(), bounds.right, bounds.centerY() + mLineSize);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
+                final float y = bounds.exactCenterY();
+                mLine.set(bounds.left, y - half, bounds.right, y + half);
                 break;
             case Gravity.CENTER_VERTICAL:
-                mRect.set(bounds.left, bounds.top, bounds.centerX(), bounds.bottom);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.centerX() + mLineSize, bounds.top, bounds.right, bounds.bottom);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.centerX(), bounds.top, bounds.centerX() + mLineSize, bounds.bottom);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
-                break;
-            case Gravity.TOP | Gravity.BOTTOM:
-                mRect.set(bounds.left, bounds.top + mLineSize, bounds.right, bounds.bottom - mLineSize);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.left, bounds.top, bounds.right, bounds.top + mLineSize);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.left, bounds.bottom - mLineSize, bounds.right, bounds.bottom);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
-                break;
-            case Gravity.LEFT | Gravity.RIGHT:
-                mRect.set(bounds.left + mLineSize, bounds.top, bounds.right - mLineSize, bounds.bottom);
-                mPaint.setColor(mBackgroundColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.left, bounds.top, bounds.left + mLineSize, bounds.bottom);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
-                mRect.set(bounds.right - mLineSize, bounds.top, bounds.right, bounds.bottom);
-                mPaint.setColor(mLineColor);
-                canvas.drawRect(mRect, mPaint);
+                final float x = bounds.exactCenterX();
+                mLine.set(x - half, bounds.top, x + half, bounds.bottom);
                 break;
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
     @Override
-    public void setAlpha(int alpha) {
-        mPaint.setAlpha(alpha);
-        invalidateSelf();
+    public boolean onLayoutDirectionChanged(int layoutDirection) {
+        super.onLayoutDirectionChanged(layoutDirection);
+        updateLocation(getBounds());
+        return true;
     }
 
     @Override
-    public void setColorFilter(ColorFilter colorFilter) {
-        mPaint.setColorFilter(colorFilter);
-        invalidateSelf();
+    public void draw(@SuppressWarnings("NullableProblems") Canvas canvas) {
+        if (!isVisible())
+            return;
+        final Rect bounds = getBounds();
+        if (bounds.isEmpty())
+            return;
+        final int[] state = getState();
+        if (mBackgroundColor != null) {
+            final int backgroundColor = DrawableHelper.getColor(mBackgroundColor, state, mAlpha);
+            mPaint.setColor(backgroundColor);
+            canvas.drawRect(bounds, mPaint);
+        }
+        if (mLineColor != null) {
+            final int lineColor = DrawableHelper.getColor(mLineColor, state, mAlpha);
+            mPaint.setColor(lineColor);
+            canvas.drawRect(mLine, mPaint);
+        }
     }
 
     @Override
@@ -191,42 +174,135 @@ public class LineDrawable extends Drawable {
         return PixelFormat.TRANSLUCENT;
     }
 
+    @Override
+    public void setAlpha(int alpha) {
+        if (mAlpha == alpha)
+            return;
+        mAlpha = alpha;
+        invalidateSelf();
+    }
+
+    @Override
+    public int getAlpha() {
+        return mAlpha;
+    }
+
+    @Override
+    public void setColorFilter(ColorFilter cf) {
+        mPaint.setColorFilter(cf);
+        invalidateSelf();
+    }
+
+    @Override
+    public boolean isStateful() {
+        return (mBackgroundColor != null && mBackgroundColor.isStateful()) ||
+                (mLineColor != null && mLineColor.isStateful());
+    }
+
+    @Override
+    protected boolean onStateChange(int[] state) {
+        return isStateful();
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    public void getOutline(Outline outline) {
+        final int[] state = getState();
+        final int backgroundColor = DrawableHelper.getColor(mBackgroundColor, state, mAlpha);
+        final int backgroundAlpha = Color.alpha(backgroundColor);
+        if (backgroundAlpha != 0) {
+            outline.setRect(getBounds());
+            outline.setAlpha(backgroundAlpha / 255f);
+            return;
+        }
+        final int lineColor = DrawableHelper.getColor(mLineColor, state, mAlpha);
+        final int lineAlpha = Color.alpha(lineColor);
+        outline.setRect(Math.round(mLine.left - 0.5f), Math.round(mLine.top - 0.5f),
+                Math.round(mLine.right + 0.5f), Math.round(mLine.bottom + 0.5f));
+        outline.setAlpha(lineAlpha / 255f);
+    }
+
+    /**
+     * 获取背景色
+     *
+     * @return 背景色
+     */
+    public ColorStateList getBackgroundColor() {
+        return mBackgroundColor;
+    }
+
     /**
      * 设置背景色
      *
-     * @param color 背景色
+     * @param background 背景色
      */
-    public void setBackground(int color) {
-        mBackgroundColor = color;
+    public void setBackgroundColor(ColorStateList background) {
+        if (mBackgroundColor == background)
+            return;
+        mBackgroundColor = background;
         invalidateSelf();
     }
 
     /**
-     * 设置线条颜色
+     * 获取线条色
      *
-     * @param color 线条颜色
+     * @return 线条色
      */
-    public void setLineColor(int color) {
-        mLineColor = color;
+    public ColorStateList getLineColor() {
+        return mLineColor;
+    }
+
+    /**
+     * 设置线条色
+     *
+     * @param line 线条色
+     */
+    public void setLineColor(ColorStateList line) {
+        if (mLineColor == line)
+            return;
+        mLineColor = line;
         invalidateSelf();
     }
 
     /**
-     * 设置线条粗细
+     * 获取线宽
      *
-     * @param size 线条粗细
+     * @return 线宽
      */
-    public void setLineSize(int size) {
+    public float getLineSize() {
+        return mLineSize;
+    }
+
+    /**
+     * 设置线宽
+     *
+     * @param size 线宽
+     */
+    public void setLineSize(float size) {
+        if (mLineSize == size)
+            return;
         mLineSize = size;
+        updateLocation(getBounds());
         invalidateSelf();
     }
 
     /**
-     * 设置布局
+     * 获取位置
      *
-     * @param gravity 布局
+     * @return 位置
+     */
+    public int getGravity() {
+        return mGravity;
+    }
+
+    /**
+     * 设置位置
+     *
+     * @param gravity 位置
      */
     public void setGravity(int gravity) {
+        if (mGravity == gravity)
+            return;
         mGravity = gravity;
         invalidateSelf();
     }

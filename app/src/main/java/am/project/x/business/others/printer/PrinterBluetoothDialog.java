@@ -18,17 +18,17 @@ package am.project.x.business.others.printer;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatDialog;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 
 import java.util.Collection;
 
 import am.project.x.R;
 import am.project.x.utils.AlertDialogUtils;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDialog;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * 蓝牙设备选择对话框
@@ -46,7 +46,7 @@ class PrinterBluetoothDialog extends AppCompatDialog implements PrinterDeviceVie
         if (bonded == null)
             return;
         final Drawable divider = ContextCompat.getDrawable(context,
-                R.drawable.divider_printer_device);
+                R.drawable.divider_common);
         if (divider != null) {
             final DividerItemDecoration decoration = new DividerItemDecoration(context,
                     DividerItemDecoration.VERTICAL);

@@ -16,19 +16,22 @@
 
 package am.widget.multifunctionalrecyclerview.layoutmanager;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
-import android.support.annotation.Nullable;
-import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * 分页LayoutManager
  * Created by Alex on 2017/11/6.
  */
-@SuppressWarnings("all")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class PagingLayoutManager extends BothDirectionsScrollLayoutManager {
 
     private final PagingOverScroller mScroller;
@@ -78,7 +81,7 @@ public class PagingLayoutManager extends BothDirectionsScrollLayoutManager {
     }
 
     @Override
-    public void measureChildWithMargins(View child, int widthUsed, int heightUsed) {
+    public void measureChildWithMargins(@SuppressWarnings("NullableProblems") @NonNull View child, int widthUsed, int heightUsed) {
         final RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) child.getLayoutParams();
         lp.leftMargin = 0;
         lp.rightMargin = 0;
@@ -112,6 +115,7 @@ public class PagingLayoutManager extends BothDirectionsScrollLayoutManager {
         }
     }
 
+    @SuppressLint("RtlHardcoded")
     private int getPagingMarginStart(int startDecoration, int endDecoration, int assignSize) {
         switch (mPagingGravity) {
             default:
@@ -220,6 +224,7 @@ public class PagingLayoutManager extends BothDirectionsScrollLayoutManager {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private boolean adjustPagingHorizontal(boolean smooth) {
         final RecyclerView view = getRecyclerView();
         if (view == null)
@@ -294,6 +299,7 @@ public class PagingLayoutManager extends BothDirectionsScrollLayoutManager {
         return true;
     }
 
+    @SuppressWarnings("ConstantConditions")
     private boolean adjustPagingVertically(boolean smooth) {
         final RecyclerView view = getRecyclerView();
         if (view == null)
@@ -386,6 +392,7 @@ public class PagingLayoutManager extends BothDirectionsScrollLayoutManager {
         final int count = getChildCount();
         for (int i = count - 1; i >= 0; i--) {
             final View child = getChildAt(i);
+            //noinspection ConstantConditions
             getDecoratedBoundsWithMargins(child, mChildBound);
             if (getOrientation() == HORIZONTAL) {
                 if ((mChildBound.left < x && mChildBound.right > x)
@@ -529,6 +536,7 @@ public class PagingLayoutManager extends BothDirectionsScrollLayoutManager {
      *
      * @param enable 是否开启
      */
+    @SuppressWarnings("ConstantConditions")
     public void setPagingEnable(boolean enable) {
         if (mPagingEnable == enable)
             return;

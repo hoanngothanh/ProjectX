@@ -17,10 +17,11 @@ package am.project.x.business.main.fragments;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import androidx.annotation.Nullable;
 
 import am.project.x.R;
 import am.project.x.base.BaseFragment;
@@ -30,8 +31,9 @@ import am.project.x.business.widgets.gradienttabstrip.GradientTabStripActivity;
 import am.project.x.business.widgets.headerfootergridview.HeaderFooterGridViewActivity;
 import am.project.x.business.widgets.indicatortabstrip.IndicatorTabStripActivity;
 import am.project.x.business.widgets.multiactiontextview.MultiActionTextViewActivity;
+import am.project.x.business.widgets.multifunctionalimageview.MultifunctionalImageViewActivity;
+import am.project.x.business.widgets.multifunctionalrecyclerview.MultifunctionalRecyclerViewActivity;
 import am.project.x.business.widgets.recyclepager.RecyclePagerActivity;
-import am.project.x.business.widgets.shapeimageview.ShapeImageViewActivity;
 import am.project.x.business.widgets.smoothinputlayout.SmoothInputLayoutActivity;
 import am.project.x.business.widgets.statelayout.StateLayoutActivity;
 import am.project.x.business.widgets.tagtabstrip.TagTabStripActivity;
@@ -65,6 +67,7 @@ public class WidgetsFragment extends BaseFragment implements View.OnClickListene
         findViewById(R.id.widget_btn_circleprogressbar).setOnClickListener(this);
         findViewById(R.id.widget_btn_zxingscanview).setOnClickListener(this);
         findViewById(R.id.widget_btn_smoothinputlayout).setOnClickListener(this);
+        findViewById(R.id.widget_btn_multifunctionalrecyclerview).setOnClickListener(this);
     }
 
     @Override
@@ -80,7 +83,7 @@ public class WidgetsFragment extends BaseFragment implements View.OnClickListene
                 IndicatorTabStripActivity.start(getActivity());
                 break;
             case R.id.widget_btn_shapeimageview:
-                ShapeImageViewActivity.start(getActivity());
+                MultifunctionalImageViewActivity.start(getActivity());
                 break;
             case R.id.widget_btn_statelayout:
                 StateLayoutActivity.start(getActivity());
@@ -108,6 +111,9 @@ public class WidgetsFragment extends BaseFragment implements View.OnClickListene
                 break;
             case R.id.widget_btn_smoothinputlayout:
                 SmoothInputLayoutActivity.start(getActivity());
+                break;
+            case R.id.widget_btn_multifunctionalrecyclerview:
+                MultifunctionalRecyclerViewActivity.start(getActivity());
                 break;
         }
     }

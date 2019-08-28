@@ -6,42 +6,144 @@
     android:layout_height="match_parent"
     tools:context=".business.main.fragments.OthersFragment">
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/other_btn_printer"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_others_printer"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_others_printer"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintWidth_percent="0.25" />
 
-        <android.support.v7.widget.AppCompatButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/other_btn_crypto"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:drawablePadding="6dp"
             android:drawableTop="@drawable/ic_others_crypto"
-            android:paddingBottom="18dp"
+            android:drawablePadding="6dp"
             android:paddingTop="18dp"
+            android:paddingBottom="18dp"
             android:text="@string/main_others_crypto"
-            android:textColor="@color/colorAccent"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@id/other_btn_printer"
             app:layout_constraintStart_toEndOf="@id/other_btn_printer"
             app:layout_constraintTop_toTopOf="@id/other_btn_printer"
             app:layout_constraintWidth_percent="0.25" />
-    </android.support.constraint.ConstraintLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/other_btn_ftp"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:drawableTop="@drawable/ic_others_ftp"
+            android:drawablePadding="6dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="18dp"
+            android:text="@string/main_others_ftp"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/other_btn_crypto"
+            app:layout_constraintStart_toEndOf="@id/other_btn_crypto"
+            app:layout_constraintTop_toTopOf="@id/other_btn_crypto"
+            app:layout_constraintWidth_percent="0.25" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/other_btn_font"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:drawableTop="@drawable/ic_others_font"
+            android:drawablePadding="6dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="18dp"
+            android:text="@string/main_others_font"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/other_btn_ftp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/other_btn_ftp"
+            app:layout_constraintTop_toTopOf="@id/other_btn_ftp" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/other_btn_opentype"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="?selectableItemBackgroundBorderless"
+            android:drawableTop="@drawable/ic_others_opentype"
+            android:drawablePadding="6dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="18dp"
+            android:text="@string/main_others_opentype"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/other_btn_printer"
+            app:layout_constraintWidth_percent="0.25" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/other_btn_floating"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:drawableTop="@drawable/ic_others_floatingactionmode"
+            android:drawablePadding="6dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="18dp"
+            android:text="@string/main_others_floating"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/other_btn_opentype"
+            app:layout_constraintStart_toEndOf="@id/other_btn_opentype"
+            app:layout_constraintTop_toTopOf="@id/other_btn_opentype"
+            app:layout_constraintWidth_percent="0.25" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/other_btn_clipboard"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:drawableTop="@drawable/ic_develop_developing"
+            android:drawablePadding="6dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="18dp"
+            android:text="@string/main_others_clipboard"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/other_btn_floating"
+            app:layout_constraintStart_toEndOf="@id/other_btn_floating"
+            app:layout_constraintTop_toTopOf="@id/other_btn_floating"
+            app:layout_constraintWidth_percent="0.25" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/other_btn_retrofit"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:drawableTop="@drawable/ic_develop_developing"
+            android:drawablePadding="6dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="18dp"
+            android:text="@string/main_others_retrofit"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/other_btn_clipboard"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/other_btn_clipboard"
+            app:layout_constraintTop_toTopOf="@id/other_btn_clipboard" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".business.drawables.loadingdrawable.LoadingDrawableActivity">
 
-    <android.support.v7.widget.Toolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/ld_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -32,29 +32,29 @@
             app:wlyHorizontalSpacing="30dp"
             app:wlyVerticalSpacing="30dp">
 
-            <am.widget.MaterialProgressImageView
+            <am.project.x.widget.CircularProgressImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                app:mpiElevation="2dp"
-                app:mpiSchemeColor1="#ff33b5e5"
-                app:mpiSchemeColor2="#ff99cc00"
-                app:mpiSchemeColor3="#ffff4444"
-                app:mpiSchemeColor4="#ffffbb33" />
+                app:cpSchemeColor1="@android:color/holo_red_light"
+                app:cpSchemeColor2="@android:color/holo_blue_light"
+                app:cpSchemeColor3="@android:color/holo_green_light"
+                app:cpSchemeColor4="@android:color/holo_orange_light"
+                app:cpSchemeColor5="@android:color/holo_purple" />
 
-            <android.support.v7.widget.AppCompatImageView
+            <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ld_iv_01"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center" />
 
-            <android.support.v7.widget.AppCompatImageView
+            <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ld_iv_02"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center" />
 
-            <android.support.v7.widget.AppCompatImageView
+            <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/ld_iv_03"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -64,4 +64,4 @@
 
     </ScrollView>
 
-</android.support.constraint.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

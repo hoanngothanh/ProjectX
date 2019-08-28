@@ -27,7 +27,7 @@ import am.util.opentype.TableRecord;
  * the purposes of these calculations.
  */
 @SuppressWarnings("unused")
-public class HeaderTable {
+public class HeaderTable extends BaseTable {
 
     private final int mMajorVersion;
     private final int mMinorVersion;
@@ -49,6 +49,7 @@ public class HeaderTable {
     private final int mGlyphDataFormat;
 
     public HeaderTable(OpenTypeReader reader, TableRecord record) throws IOException {
+        super(record);
         if (reader == null || record == null || record.getTableTag() != TableRecord.TAG_HEAD)
             throw new IOException();
         reader.seek(record.getOffset());
@@ -260,6 +261,69 @@ public class HeaderTable {
     }
 
     /**
+     * Returns the style for this view.
+     *
+     * @return True if this view is bold, false otherwise.
+     */
+    public boolean isBold() {
+        return (mMacStyle & 1) == 1;
+    }
+
+    /**
+     * Returns the style for this view.
+     *
+     * @return True if this view is italic, false otherwise.
+     */
+    public boolean isItalic() {
+        return (mMacStyle & 2) == 2;
+    }
+
+    /**
+     * Returns the style for this view.
+     *
+     * @return True if this view is underline, false otherwise.
+     */
+    public boolean isUnderline() {
+        return (mMacStyle & 4) == 4;
+    }
+
+    /**
+     * Returns the style for this view.
+     *
+     * @return True if this view is outline, false otherwise.
+     */
+    public boolean isOutline() {
+        return (mMacStyle & 8) == 8;
+    }
+
+    /**
+     * Returns the style for this view.
+     *
+     * @return True if this view is shadow, false otherwise.
+     */
+    public boolean isShadow() {
+        return (mMacStyle & 16) == 16;
+    }
+
+    /**
+     * Returns the style for this view.
+     *
+     * @return True if this view is condensed, false otherwise.
+     */
+    public boolean isCondensed() {
+        return (mMacStyle & 32) == 32;
+    }
+
+    /**
+     * Returns the style for this view.
+     *
+     * @return True if this view is extended, false otherwise.
+     */
+    public boolean isExtended() {
+        return (mMacStyle & 64) == 64;
+    }
+
+    /**
      * Smallest readable size in pixels.
      *
      * @return Lowest Rec PPEM.
@@ -304,5 +368,38 @@ public class HeaderTable {
      */
     public int getGlyphDataFormat() {
         return mGlyphDataFormat;
+    }
+
+    @Override
+    public int getHashCode() {
+        return Objects.hash(super.getHashCode(), mMajorVersion, mMinorVersion, mFontRevision,
+                mCheckSumAdjustment, mMagicNumber, mFlags, mUnitsPerEm, mCreated, mModified,
+                mXMin, mYMin, mXMax, mYMax, mMacStyle, mLowestRecPPEM, mFontDirectionHint,
+                mIndexToLocFormat, mGlyphDataFormat);
+    }
+
+    @Override
+    public String getString() {
+        return "HeaderTable{" +
+                "record=" + String.valueOf(getTableRecord()) +
+                ", majorVersion=" + mMajorVersion +
+                ", minorVersion=" + mMinorVersion +
+                ", fontRevision=" + mFontRevision +
+                ", checkSumAdjustment=" + mCheckSumAdjustment +
+                ", magicNumber=" + mMagicNumber +
+                ", flags=" + mFlags +
+                ", unitsPerEm=" + mUnitsPerEm +
+                ", created=" + mCreated +
+                ", modified=" + mModified +
+                ", xMin=" + mXMin +
+                ", yMin=" + mYMin +
+                ", xMax=" + mXMax +
+                ", yMax=" + mYMax +
+                ", macStyle=" + mMacStyle +
+                ", lowestRecPPEM=" + mLowestRecPPEM +
+                ", fontDirectionHint=" + mFontDirectionHint +
+                ", indexToLocFormat=" + mIndexToLocFormat +
+                ", glyphDataFormat=" + mGlyphDataFormat +
+                '}';
     }
 }

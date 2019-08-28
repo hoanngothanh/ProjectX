@@ -15,15 +15,13 @@
  */
 package am.project.x.base;
 
-import android.support.annotation.RequiresApi;
-
 import am.util.mvp.AMFragment;
+import androidx.annotation.RequiresApi;
 
 /**
  * 基础Fragment
  * Created by Alex on 2018/7/23.
  */
-@SuppressWarnings("unused")
 @RequiresApi(11)
 public abstract class BaseFragment extends AMFragment {
 }

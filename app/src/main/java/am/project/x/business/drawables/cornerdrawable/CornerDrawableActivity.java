@@ -15,17 +15,20 @@
  */
 package am.project.x.business.drawables.cornerdrawable;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
+
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import am.drawable.CornerDrawable;
 import am.project.x.R;
@@ -37,9 +40,9 @@ import am.project.x.base.BaseActivity;
 public class CornerDrawableActivity extends BaseActivity implements
         AdapterView.OnItemSelectedListener, SeekBar.OnSeekBarChangeListener {
 
-    private CornerDrawable drawable;
-    private int stokeColor;
-    private float density;
+    private View mVContent;
+    private CornerDrawable mDrawable;
+    private float mDensity;
 
     public static void start(Context context) {
         context.startActivity(new Intent(context, CornerDrawableActivity.class));
@@ -53,17 +56,11 @@ public class CornerDrawableActivity extends BaseActivity implements
     @Override
     protected void initializeActivity(@Nullable Bundle savedInstanceState) {
         setSupportActionBar(R.id.cnd_toolbar);
-        density = getResources().getDisplayMetrics().density;
-        stokeColor = ContextCompat.getColor(this, R.color.colorAccent);
-        final int color = ContextCompat.getColor(this, R.color.colorRipple);
-        final int width = (int) (20 * density);
-        final int height = (int) (10 * density);
-        drawable = new CornerDrawable(color, width, height);
-        if (Build.VERSION.SDK_INT >= 16) {
-            findViewById(R.id.cnd_tv_content).setBackground(drawable);
-        } else {
-            findViewById(R.id.cnd_tv_content).setBackgroundDrawable(drawable);
-        }
+        mVContent = findViewById(R.id.cnd_tv_content);
+        mDensity = getResources().getDisplayMetrics().density;
+        mDrawable = new CornerDrawable((int) (20 * mDensity), (int) (10 * mDensity),
+                ContextCompat.getColor(this, R.color.colorRipple));
+        setBackground(mDrawable);
         this.<Spinner>findViewById(R.id.cnd_sp_direction).setOnItemSelectedListener(this);
         this.<Spinner>findViewById(R.id.cnd_sp_location).setOnItemSelectedListener(this);
         this.<SeekBar>findViewById(R.id.cnd_sb_width).setOnSeekBarChangeListener(this);
@@ -75,39 +72,50 @@ public class CornerDrawableActivity extends BaseActivity implements
         this.<SeekBar>findViewById(R.id.cnd_sb_padding).setOnSeekBarChangeListener(this);
     }
 
+    private void setBackground(Drawable drawable) {
+        if (Build.VERSION.SDK_INT >= 16) {
+            mVContent.setBackground(drawable);
+        } else {
+            mVContent.setBackgroundDrawable(drawable);
+        }
+    }
+
     // Listener
+    @SuppressLint("RtlHardcoded")
     @Override
-    @SuppressWarnings("all")
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         switch (parent.getId()) {
             case R.id.cnd_sp_direction:
                 switch (position) {
                     default:
                     case 0:
-                        drawable.setDirection(Gravity.TOP);
+                        mDrawable.setDirection(Gravity.TOP);
                         break;
                     case 1:
-                        drawable.setDirection(Gravity.LEFT);
+                        mDrawable.setDirection(Gravity.START);
                         break;
                     case 2:
-                        drawable.setDirection(Gravity.RIGHT);
+                        mDrawable.setDirection(Gravity.END);
                         break;
                     case 3:
-                        drawable.setDirection(Gravity.BOTTOM);
+                        mDrawable.setDirection(Gravity.BOTTOM);
                         break;
                 }
+                // 因View不自动更新Padding，此处需要重新设置Padding
+                setBackground(null);
+                setBackground(mDrawable);
                 break;
             case R.id.cnd_sp_location:
                 switch (position) {
                     default:
                     case 0:
-                        drawable.setLocation(Gravity.CENTER);
+                        mDrawable.setLocation(Gravity.CENTER, mDrawable.getCornerMargin());
                         break;
                     case 1:
-                        drawable.setLocation(Gravity.LEFT);
+                        mDrawable.setLocation(Gravity.START, mDrawable.getCornerMargin());
                         break;
                     case 2:
-                        drawable.setLocation(Gravity.RIGHT);
+                        mDrawable.setLocation(Gravity.END, mDrawable.getCornerMargin());
                         break;
                 }
                 break;
@@ -123,31 +131,43 @@ public class CornerDrawableActivity extends BaseActivity implements
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         switch (seekBar.getId()) {
             case R.id.cnd_sb_width:
-                final int width = (int) ((20 + progress) * density);
-                drawable.setCornerWidth(width);
+                final int width = (int) ((20 + progress) * mDensity);
+                mDrawable.setCornerWidth(width);
                 break;
             case R.id.cnd_sb_height:
-                final int height = (int) ((10 + progress) * density);
-                drawable.setCornerHeight(height);
+                final int height = (int) ((10 + progress) * mDensity);
+                mDrawable.setCornerHeight(height);
+                // 因View不自动更新Padding，此处需要重新设置Padding
+                setBackground(null);
+                setBackground(mDrawable);
                 break;
             case R.id.cnd_sb_margin:
-                final int margin = (int) (progress * density);
-                drawable.setCornerMargin(margin);
+                final int margin = (int) (progress * mDensity);
+                mDrawable.setLocation(mDrawable.getLocation(), margin);
                 break;
             case R.id.cnd_sb_bezier:
                 final float bezier = progress * 0.01f;
-                drawable.setCornerBezier(bezier);
+                mDrawable.setCornerBezier(bezier);
                 break;
             case R.id.cnd_sb_stoke:
-                drawable.setStroke(progress, stokeColor, 0, 0);
+                mDrawable.setStrokeWidth(progress);
+                if (progress == 0) {
+                    mDrawable.setStrokeColor(null);
+                } else {
+                    mDrawable.setStrokeColor(
+                            ContextCompat.getColor(this, R.color.colorAccent));
+                }
                 break;
             case R.id.cnd_sb_radius:
-                final int radius = (int) (progress * density);
-                drawable.setContentRadius(radius);
+                final int radius = (int) (progress * mDensity);
+                mDrawable.setContentRadius(radius);
                 break;
             case R.id.cnd_sb_padding:
-                final int padding = (int) (progress * density);
-                drawable.setPadding(padding, padding, padding, padding);
+                final int padding = (int) (progress * mDensity);
+                mDrawable.setPadding(padding, padding, padding, padding);
+                // 因View不自动更新Padding，此处需要重新设置Padding
+                setBackground(null);
+                setBackground(mDrawable);
                 break;
         }
     }

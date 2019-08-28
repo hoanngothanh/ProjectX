@@ -19,14 +19,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
 import am.drawable.TextDrawable;
 import am.project.x.R;
 import am.project.x.base.BaseActivity;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 /**
  * 文本图片
@@ -49,9 +49,9 @@ public class TextDrawableActivity extends BaseActivity implements
     protected void initializeActivity(@Nullable Bundle savedInstanceState) {
         setSupportActionBar(R.id.td_toolbar);
         final float size = 86 * getResources().getDisplayMetrics().density;
-        drawable = new TextDrawable(getApplicationContext(), size,
-                ContextCompat.getColor(this, R.color.colorPrimary),
-                getString(R.string.td_content));
+        drawable = new TextDrawable(getString(R.string.td_content), size,
+                ContextCompat.getColor(this, R.color.colorPrimary));
+        drawable.setDensity(getResources().getDisplayMetrics().density);
         if (Build.VERSION.SDK_INT >= 16) {
             findViewById(R.id.td_v_content).setBackground(drawable);
         } else {

@@ -16,6 +16,7 @@
 package am.util.opentype.tables;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import am.util.opentype.OpenTypeReader;
 import am.util.opentype.TableRecord;
@@ -27,12 +28,13 @@ import am.util.opentype.TableRecord;
  * the last glyph element, there is an extra entry after the last valid index.
  */
 @SuppressWarnings("unused")
-public class IndexToLocationTable {
+public class IndexToLocationTable extends BaseTable {
 
     private final int[] mOffsets;
 
     public IndexToLocationTable(OpenTypeReader reader, TableRecord record, int indexToLocFormat,
                                 int numGlyphs) throws IOException {
+        super(record);
         if (reader == null || record == null || record.getTableTag() != TableRecord.TAG_LOCA)
             throw new IOException();
         reader.seek(record.getOffset());
@@ -59,5 +61,20 @@ public class IndexToLocationTable {
      */
     public int[] getOffsets() {
         return mOffsets;
+    }
+
+    @Override
+    public int getHashCode() {
+        int result = super.getHashCode();
+        result = 31 * result + Arrays.hashCode(mOffsets);
+        return result;
+    }
+
+    @Override
+    public String getString() {
+        return "IndexToLocationTable{" +
+                "record=" + String.valueOf(getTableRecord()) +
+                ", offsets=" + Arrays.toString(mOffsets) +
+                '}';
     }
 }

@@ -17,15 +17,22 @@ package am.project.x.business.main.fragments;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.Nullable;
+
 import am.project.x.R;
 import am.project.x.base.BaseFragment;
+import am.project.x.business.others.clipboard.ClipboardActivity;
 import am.project.x.business.others.crypto.CryptoActivity;
+import am.project.x.business.others.floatingactionmode.FloatingActionModeActivity;
+import am.project.x.business.others.font.FontActivity;
+import am.project.x.business.others.ftp.FTPActivity;
+import am.project.x.business.others.opentypelist.OpenTypeListActivity;
 import am.project.x.business.others.printer.PrinterActivity;
+import am.project.x.business.others.retrofithelper.RetrofitActivity;
 
 public class OthersFragment extends BaseFragment implements View.OnClickListener {
 
@@ -43,6 +50,12 @@ public class OthersFragment extends BaseFragment implements View.OnClickListener
     protected void initializeFragment(Activity activity, @Nullable Bundle savedInstanceState) {
         findViewById(R.id.other_btn_printer).setOnClickListener(this);
         findViewById(R.id.other_btn_crypto).setOnClickListener(this);
+        findViewById(R.id.other_btn_ftp).setOnClickListener(this);
+        findViewById(R.id.other_btn_font).setOnClickListener(this);
+        findViewById(R.id.other_btn_opentype).setOnClickListener(this);
+        findViewById(R.id.other_btn_floating).setOnClickListener(this);
+        findViewById(R.id.other_btn_clipboard).setOnClickListener(this);
+        findViewById(R.id.other_btn_retrofit).setOnClickListener(this);
     }
 
     @Override
@@ -53,6 +66,24 @@ public class OthersFragment extends BaseFragment implements View.OnClickListener
                 break;
             case R.id.other_btn_crypto:
                 CryptoActivity.start(getActivity());
+                break;
+            case R.id.other_btn_ftp:
+                FTPActivity.start(getActivity());
+                break;
+            case R.id.other_btn_font:
+                FontActivity.start(getActivity());
+                break;
+            case R.id.other_btn_opentype:
+                OpenTypeListActivity.start(getActivity());
+                break;
+            case R.id.other_btn_floating:
+                FloatingActionModeActivity.start(getActivity());
+                break;
+            case R.id.other_btn_clipboard:
+                ClipboardActivity.start(getActivity());
+                break;
+            case R.id.other_btn_retrofit:
+                RetrofitActivity.start(getActivity());
                 break;
         }
     }

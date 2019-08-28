@@ -16,21 +16,18 @@
 
 package am.widget.stateframelayout;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
-import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -40,75 +37,153 @@ import android.widget.FrameLayout;
  *
  * @author Alex
  */
-@SuppressWarnings("all")
+@SuppressWarnings({"unused", "NullableProblems", "WeakerAccess"})
 public class StateFrameLayout extends FrameLayout {
 
     public static final int STATE_NORMAL = 0;// 普通
     public static final int STATE_LOADING = 1;// 载入
     public static final int STATE_ERROR = 2;// 错误
     public static final int STATE_EMPTY = 3;// 空白
-    private Drawable mLoadingDrawable;
-    private Drawable mErrorDrawable;
-    private Drawable mEmptyDrawable;
-    private int mState;
-    private boolean mAlwaysDrawChild;
-    private OnStateClickListener mClickListener;
-    private int mLoadingLayoutId;
-    private int mErrorLayoutId;
-    private int mEmptyLayoutId;
-    private View mLoadingView;
-    private View mErrorView;
-    private View mEmptyView;
+    public static final int CHANGE_DRAW = 0;// 控制绘制
+    public static final int CHANGE_GONE = 1;// 控制其是否Gone
+    public static final int CHANGE_INVISIBLE = 2;// 控制其是否Invisible（默认）
+
+    private Drawable mDrawableLoading;
+    private Drawable mDrawableError;
+    private Drawable mDrawableEmpty;
+
+    private int mState = STATE_NORMAL;
+    private final Rect tRect = new Rect();
+    private int mChangeType = CHANGE_INVISIBLE;
+    private boolean mForceIntercept = false;
+    private boolean mNormalNeverHide = false;
 
     public StateFrameLayout(Context context) {
         super(context);
-        initView(context, null);
+        initView(context, null, 0, 0);
     }
 
     public StateFrameLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initView(context, attrs);
+        initView(context, attrs, 0, 0);
     }
 
     public StateFrameLayout(Context context, AttributeSet attrs,
                             int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        initView(context, attrs);
+        initView(context, attrs, defStyleAttr, 0);
     }
 
     @TargetApi(21)
     public StateFrameLayout(Context context, AttributeSet attrs, int defStyleAttr,
                             int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        initView(context, attrs);
+        initView(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    private void initView(Context context, AttributeSet attrs) {
+    private void initView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         setWillNotDraw(false);
-        setClickable(true);
-        Drawable loading, error, empty;
-        TypedArray custom = context.obtainStyledAttributes(attrs, R.styleable.StateFrameLayout);
-        boolean alwaysDrawChild = custom.getBoolean(
-                R.styleable.StateFrameLayout_sflAlwaysDrawChild, false);
-        loading = custom.getDrawable(R.styleable.StateFrameLayout_sflLoadingDrawable);
-        error = custom.getDrawable(R.styleable.StateFrameLayout_sflErrorDrawable);
-        empty = custom.getDrawable(R.styleable.StateFrameLayout_sflEmptyDrawable);
-        int state = custom.getInt(R.styleable.StateFrameLayout_sflState, STATE_NORMAL);
-        mLoadingLayoutId = custom.getResourceId(R.styleable.StateFrameLayout_sflLoadingLayout,
+        final Drawable drawableLoading, drawableError, drawableEmpty;
+        final int layoutIdLoading, layoutIdError, layoutIdEmpty;
+        final TypedArray custom = context.obtainStyledAttributes(attrs,
+                R.styleable.StateFrameLayout, defStyleAttr, defStyleRes);
+        drawableLoading = custom.getDrawable(R.styleable.StateFrameLayout_sflLoadingDrawable);
+        drawableError = custom.getDrawable(R.styleable.StateFrameLayout_sflErrorDrawable);
+        drawableEmpty = custom.getDrawable(R.styleable.StateFrameLayout_sflEmptyDrawable);
+        layoutIdLoading = custom.getResourceId(R.styleable.StateFrameLayout_sflLoadingLayout,
                 NO_ID);
-        mErrorLayoutId = custom.getResourceId(R.styleable.StateFrameLayout_sflErrorLayout, NO_ID);
-        mEmptyLayoutId = custom.getResourceId(R.styleable.StateFrameLayout_sflEmptyLayout, NO_ID);
+        layoutIdError = custom.getResourceId(R.styleable.StateFrameLayout_sflErrorLayout, NO_ID);
+        layoutIdEmpty = custom.getResourceId(R.styleable.StateFrameLayout_sflEmptyLayout, NO_ID);
+        final int state = custom.getInt(R.styleable.StateFrameLayout_sflState, 0);
+        final int changeType = custom.getInt(R.styleable.StateFrameLayout_sflChangeType,
+                2);
+        mForceIntercept = custom.getBoolean(R.styleable.StateFrameLayout_sflForceIntercept,
+                mForceIntercept);
+        mNormalNeverHide = custom.getBoolean(R.styleable.StateFrameLayout_sflNormalNeverHide,
+                mNormalNeverHide);
         custom.recycle();
-        setAlwaysDrawChild(alwaysDrawChild);
-        setStateDrawables(loading, error, empty);
-        setState(state);
+        if (drawableLoading != null) {
+            drawableLoading.setCallback(this);
+            mDrawableLoading = drawableLoading;
+        }
+        if (drawableError != null) {
+            drawableError.setCallback(this);
+            mDrawableError = drawableError;
+        }
+        if (drawableEmpty != null) {
+            drawableEmpty.setCallback(this);
+            mDrawableEmpty = drawableEmpty;
+        }
+        updateAnimateDrawable();
+        final LayoutInflater inflater = LayoutInflater.from(context);
+        if (layoutIdEmpty != NO_ID) {
+            final View empty = inflater.inflate(layoutIdEmpty, this, false);
+            if (empty != null) {
+                final ViewGroup.LayoutParams lp = empty.getLayoutParams();
+                final LayoutParams params;
+                if (lp instanceof LayoutParams)
+                    params = (LayoutParams) lp;
+                else
+                    params = generateDefaultLayoutParams();
+                params.setState(STATE_EMPTY);
+                addView(empty, params);
+            }
+        }
+        if (layoutIdError != NO_ID) {
+            final View error = inflater.inflate(layoutIdError, this, false);
+            if (error != null) {
+                final ViewGroup.LayoutParams lp = error.getLayoutParams();
+                final LayoutParams params;
+                if (lp instanceof LayoutParams)
+                    params = (LayoutParams) lp;
+                else
+                    params = generateDefaultLayoutParams();
+                params.setState(STATE_ERROR);
+                addView(error, params);
+            }
+        }
+        if (layoutIdLoading != NO_ID) {
+            final View loading = inflater.inflate(layoutIdLoading, this, false);
+            if (loading != null) {
+                final ViewGroup.LayoutParams lp = loading.getLayoutParams();
+                final LayoutParams params;
+                if (lp instanceof LayoutParams)
+                    params = (LayoutParams) lp;
+                else
+                    params = generateDefaultLayoutParams();
+                params.setState(STATE_LOADING);
+                addView(loading, params);
+            }
+        }
+        switch (state) {
+            default:
+            case 0:
+                mState = STATE_NORMAL;
+                break;
+            case 1:
+                mState = STATE_LOADING;
+                break;
+            case 2:
+                mState = STATE_ERROR;
+                break;
+            case 3:
+                mState = STATE_EMPTY;
+                break;
+        }
+        switch (changeType) {
+            default:
+            case 0:
+                mChangeType = CHANGE_DRAW;
+                break;
+            case 1:
+                mChangeType = CHANGE_GONE;
+                break;
+            case 2:
+                mChangeType = CHANGE_INVISIBLE;
+                break;
+        }
     }
 
-    /**
-     * Returns a set of layout parameters with a width of
-     * {@link android.view.ViewGroup.LayoutParams#MATCH_PARENT},
-     * and a height of {@link android.view.ViewGroup.LayoutParams#MATCH_PARENT}.
-     */
     @Override
     protected LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
@@ -119,655 +194,228 @@ public class StateFrameLayout extends FrameLayout {
         return new LayoutParams(getContext(), attrs);
     }
 
-    // Override to allow type-checking of LayoutParams.
+    @Override
+    protected LayoutParams generateLayoutParams(ViewGroup.LayoutParams lp) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (lp instanceof LayoutParams)
+                return new LayoutParams((LayoutParams) lp);
+            if (lp instanceof FrameLayout.LayoutParams)
+                return new LayoutParams((FrameLayout.LayoutParams) lp);
+        }
+        if (lp instanceof MarginLayoutParams)
+            return new LayoutParams((MarginLayoutParams) lp);
+        return new LayoutParams(lp);
+    }
+
     @Override
     protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
         return p instanceof LayoutParams;
     }
 
     @Override
-    protected LayoutParams generateLayoutParams(ViewGroup.LayoutParams lp) {
-        if (Build.VERSION.SDK_INT >= 19) {
-            if (lp instanceof LayoutParams) {
-                return new LayoutParams((LayoutParams) lp);
-            } else if (lp instanceof FrameLayout.LayoutParams) {
-                return new LayoutParams((FrameLayout.LayoutParams) lp);
-            }
-        }
-        if (lp instanceof MarginLayoutParams) {
-            return new LayoutParams((MarginLayoutParams) lp);
-        } else {
-            return new LayoutParams(lp);
-        }
-    }
-
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        if (mLoadingLayoutId != NO_ID) {
-            View vLoading = LayoutInflater.from(getContext()).inflate(
-                    mLoadingLayoutId, this, false);
-            setLoadingView(vLoading);
-        }
-        if (mErrorLayoutId != NO_ID) {
-            View vError = LayoutInflater.from(getContext()).inflate(
-                    mErrorLayoutId, this, false);
-            setErrorView(vError);
-        }
-        if (mEmptyLayoutId != NO_ID) {
-            View vEmpty = LayoutInflater.from(getContext()).inflate(
-                    mEmptyLayoutId, this, false);
-            setEmptyView(vEmpty);
-        }
-        final int count = getChildCount();
-        for (int i = 0; i < count; i++) {
-            View child = getChildAt(i);
-            LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            switch (lp.getState()) {
-                default:
-                case STATE_NORMAL:
-                    break;
-                case STATE_LOADING:
-                    mLoadingView = child;
-                    break;
-                case STATE_EMPTY:
-                    mEmptyView = child;
-                    break;
-                case STATE_ERROR:
-                    mErrorView = child;
-                    break;
-            }
-        }
-        checkViewVisibility();
-    }
-
-    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (mChangeType == CHANGE_INVISIBLE) {
+            final int itemCount = getChildCount();
+            for (int i = 0; i < itemCount; i++) {
+                final View child = getChildAt(i);
+                child.setVisibility(isVisible(child) ? VISIBLE : INVISIBLE);
+            }
+        } else if (mChangeType == CHANGE_GONE) {
+            final int itemCount = getChildCount();
+            for (int i = 0; i < itemCount; i++) {
+                final View child = getChildAt(i);
+                child.setVisibility(isVisible(child) ? VISIBLE : GONE);
+            }
+        }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        boolean reset = false;
-        int width = getMeasuredWidth();
-        int height = getMeasuredHeight();
-        if (mLoadingDrawable != null && mLoadingDrawable.getIntrinsicWidth() > width) {
-            width = mLoadingDrawable.getIntrinsicWidth();
-            reset = true;
-        }
-        if (mLoadingDrawable != null && mLoadingDrawable.getIntrinsicHeight() > height) {
-            height = mLoadingDrawable.getIntrinsicHeight();
-            reset = true;
-        }
-        if (mErrorDrawable != null && mErrorDrawable.getIntrinsicWidth() > width) {
-            width = mErrorDrawable.getIntrinsicWidth();
-            reset = true;
-        }
-        if (mErrorDrawable != null && mErrorDrawable.getIntrinsicHeight() > height) {
-            height = mErrorDrawable.getIntrinsicHeight();
-            reset = true;
-        }
-        if (mEmptyDrawable != null && mEmptyDrawable.getIntrinsicWidth() > width) {
-            width = mEmptyDrawable.getIntrinsicWidth();
-            reset = true;
-        }
-        if (mEmptyDrawable != null && mEmptyDrawable.getIntrinsicHeight() > height) {
-            height = mEmptyDrawable.getIntrinsicHeight();
-            reset = true;
-        }
-        if (reset)
-            setMeasuredDimension(width, height);
+    }
+
+    /**
+     * 判断子项是否可见
+     *
+     * @param child 子项
+     * @return 是否可见
+     */
+    protected boolean isVisible(View child) {
+        if (mNormalNeverHide && getViewLayoutState(child) == STATE_NORMAL)
+            return true;
+        return getViewLayoutState(child) == mState;
+    }
+
+    private int getViewLayoutState(View child) {
+        final ViewGroup.LayoutParams params = child.getLayoutParams();
+        return params instanceof LayoutParams ? ((LayoutParams) params).getState() : STATE_NORMAL;
     }
 
     @Override
-    protected void dispatchDraw(Canvas canvas) {
-        super.dispatchDraw(canvas);
-        switch (mState) {
-            case STATE_LOADING:
-                drawLoading(canvas);
-                break;
-            case STATE_ERROR:
-                drawError(canvas);
-                break;
-            case STATE_EMPTY:
-                drawEmpty(canvas);
-                break;
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (mDrawableLoading != null) {
+            final Drawable loading = mDrawableLoading;
+            final Rect padding = tRect;
+            padding.setEmpty();
+            loading.getPadding(padding);
+            final int width = loading.getMinimumWidth() + padding.left + padding.right;
+            final int height = loading.getMinimumHeight() + padding.top + padding.bottom;
+            final int left = Math.round((w - width) * 0.5f);
+            final int top = Math.round((h - height) * 0.5f);
+            loading.setBounds(left, top, left + width, top + height);
         }
-    }
-
-    private void drawLoading(Canvas canvas) {
-        if (mLoadingDrawable != null) {
-            canvas.save();
-            canvas.translate(getWidth() * 0.5f, getHeight() * 0.5f);
-            final int width = mLoadingDrawable.getIntrinsicWidth();
-            final int height = mLoadingDrawable.getIntrinsicHeight();
-            canvas.translate(-width * 0.5f, -height * 0.5f);
-            mLoadingDrawable.setBounds(0, 0, width, height);
-            mLoadingDrawable.draw(canvas);
-            canvas.restore();
+        if (mDrawableError != null) {
+            final Drawable error = mDrawableError;
+            final Rect padding = tRect;
+            padding.setEmpty();
+            error.getPadding(padding);
+            final int width = error.getMinimumWidth() + padding.left + padding.right;
+            final int height = error.getMinimumHeight() + padding.top + padding.bottom;
+            final int left = Math.round((w - width) * 0.5f);
+            final int top = Math.round((h - height) * 0.5f);
+            error.setBounds(left, top, left + width, top + height);
         }
-    }
-
-    private void drawError(Canvas canvas) {
-        if (mErrorDrawable != null) {
-            canvas.save();
-            canvas.translate(getWidth() * 0.5f, getHeight() * 0.5f);
-            final int width = mErrorDrawable.getIntrinsicWidth();
-            final int height = mErrorDrawable.getIntrinsicHeight();
-            canvas.translate(-width * 0.5f, -height * 0.5f);
-            mErrorDrawable.setBounds(0, 0, width, height);
-            mErrorDrawable.draw(canvas);
-            canvas.restore();
-        }
-    }
-
-    private void drawEmpty(Canvas canvas) {
-        if (mEmptyDrawable != null) {
-            canvas.save();
-            canvas.translate(getWidth() * 0.5f, getHeight() * 0.5f);
-            final int width = mEmptyDrawable.getIntrinsicWidth();
-            final int height = mEmptyDrawable.getIntrinsicHeight();
-            canvas.translate(-width * 0.5f, -height * 0.5f);
-            mEmptyDrawable.setBounds(0, 0, width, height);
-            mEmptyDrawable.draw(canvas);
-            canvas.restore();
+        if (mDrawableEmpty != null) {
+            final Drawable empty = mDrawableEmpty;
+            final Rect padding = tRect;
+            padding.setEmpty();
+            empty.getPadding(padding);
+            final int width = empty.getMinimumWidth() + padding.left + padding.right;
+            final int height = empty.getMinimumHeight() + padding.top + padding.bottom;
+            final int left = Math.round((w - width) * 0.5f);
+            final int top = Math.round((h - height) * 0.5f);
+            empty.setBounds(left, top, left + width, top + height);
         }
     }
 
     @Override
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-        if (mAlwaysDrawChild) {
+        if (mChangeType != CHANGE_DRAW)
             return super.drawChild(canvas, child, drawingTime);
-        }
+        if (isVisible(child))
+            return super.drawChild(canvas, child, drawingTime);
+        return true;
+    }
+
+
+    @Override
+    public void draw(Canvas canvas) {
+        super.draw(canvas);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
+            drawState(canvas);
+    }
+
+    @Override
+    public void onDrawForeground(Canvas canvas) {
+        super.onDrawForeground(canvas);
+        drawState(canvas);
+    }
+
+    private void drawState(Canvas canvas) {
         switch (mState) {
             default:
             case STATE_NORMAL:
-                return child == mLoadingView || child == mErrorView || super.drawChild(canvas, child, drawingTime);
+                break;
             case STATE_LOADING:
-                return child != mLoadingView || super.drawChild(canvas, child, drawingTime);
+                if (mDrawableLoading != null)
+                    mDrawableLoading.draw(canvas);
+                break;
             case STATE_ERROR:
-                return child != mErrorView || super.drawChild(canvas, child, drawingTime);
+                if (mDrawableError != null)
+                    mDrawableError.draw(canvas);
+                break;
             case STATE_EMPTY:
-                return child != mEmptyView || super.drawChild(canvas, child, drawingTime);
-        }
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                switch (mState) {
-                    case STATE_LOADING:
-                        if (mLoadingDrawable != null) {
-                            Compat.setHotspot(mLoadingDrawable, event.getX(),
-                                    event.getY());
-                        }
-                        break;
-                    case STATE_ERROR:
-                        if (mErrorDrawable != null) {
-                            Compat.setHotspot(mErrorDrawable, event.getX(),
-                                    event.getY());
-                        }
-                        break;
-                    case STATE_EMPTY:
-                        if (mEmptyDrawable != null) {
-                            Compat.setHotspot(mEmptyDrawable, event.getX(),
-                                    event.getY());
-                        }
-                        break;
-                }
+                if (mDrawableEmpty != null)
+                    mDrawableEmpty.draw(canvas);
                 break;
         }
-        return super.onTouchEvent(event);
-    }
-
-    @Override
-    public boolean performClick() {
-        final boolean superResult = super.performClick();
-        boolean result = false;
-        if (mClickListener != null) {
-            if (mClickListener instanceof OnAllStateClickListener) {
-                OnAllStateClickListener listener = (OnAllStateClickListener) mClickListener;
-                switch (mState) {
-                    case STATE_NORMAL:
-                        if (!superResult)
-                            playSoundEffect(SoundEffectConstants.CLICK);
-                        listener.onNormalClick(this);
-                        result = true;
-                        break;
-                    case STATE_LOADING:
-                        if (!superResult)
-                            playSoundEffect(SoundEffectConstants.CLICK);
-                        listener.onLoadingClick(this);
-                        result = true;
-                        break;
-                    case STATE_ERROR:
-                        if (!superResult)
-                            playSoundEffect(SoundEffectConstants.CLICK);
-                        listener.onErrorClick(this);
-                        result = true;
-                        break;
-                    case STATE_EMPTY:
-                        if (!superResult)
-                            playSoundEffect(SoundEffectConstants.CLICK);
-                        listener.onEmptyClick(this);
-                        result = true;
-                        break;
-                }
-            } else {
-                switch (mState) {
-                    case STATE_ERROR:
-                        if (!superResult)
-                            playSoundEffect(SoundEffectConstants.CLICK);
-                        mClickListener.onErrorClick(this);
-                        result = true;
-                        break;
-                }
-            }
-        }
-        return superResult || result;
     }
 
     @Override
     protected void drawableStateChanged() {
+        final int[] state = getDrawableState();
         switch (mState) {
             case STATE_LOADING:
-                if (mLoadingDrawable != null && mLoadingDrawable.isStateful()) {
-                    mLoadingDrawable.setState(getDrawableState());
-                }
+                if (mDrawableLoading != null && mDrawableLoading.isStateful())
+                    mDrawableLoading.setState(state);
                 break;
             case STATE_ERROR:
-                if (mErrorDrawable != null && mErrorDrawable.isStateful()) {
-                    mErrorDrawable.setState(getDrawableState());
-                }
+                if (mDrawableError != null && mDrawableError.isStateful())
+                    mDrawableError.setState(state);
                 break;
             case STATE_EMPTY:
-                if (mEmptyDrawable != null && mEmptyDrawable.isStateful()) {
-                    mEmptyDrawable.setState(getDrawableState());
-                }
+                if (mDrawableEmpty != null && mDrawableEmpty.isStateful())
+                    mDrawableEmpty.setState(state);
                 break;
         }
         super.drawableStateChanged();
-
     }
 
     @Override
     protected boolean verifyDrawable(Drawable who) {
-        boolean shouldVerify = false;
+        if (super.verifyDrawable(who))
+            return true;
+        return who == mDrawableLoading || who == mDrawableError || who == mDrawableEmpty;
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    public void dispatchDrawableHotspotChanged(float x, float y) {
+        super.dispatchDrawableHotspotChanged(x, y);
         switch (mState) {
             case STATE_LOADING:
-                if (mLoadingDrawable != null && who == mLoadingDrawable) {
-                    shouldVerify = true;
-                }
+                if (mDrawableLoading != null)
+                    mDrawableLoading.setHotspot(x, y);
                 break;
             case STATE_ERROR:
-                if (mErrorDrawable != null && who == mErrorDrawable) {
-                    shouldVerify = true;
-                }
+                if (mDrawableError != null)
+                    mDrawableError.setHotspot(x, y);
                 break;
             case STATE_EMPTY:
-                if (mEmptyDrawable != null && who == mEmptyDrawable) {
-                    shouldVerify = true;
-                }
+                if (mDrawableEmpty != null)
+                    mDrawableEmpty.setHotspot(x, y);
                 break;
         }
-        return shouldVerify || super.verifyDrawable(who);
     }
 
-    /**
-     * 设置自定义载入View
-     *
-     * @param loadingView  载入View
-     * @param layoutParams 布局方式
-     */
-    public void setLoadingView(View loadingView, LayoutParams layoutParams) {
-        if (mLoadingView == loadingView) {
-            return;
-        }
-        if (mLoadingView != null) {
-            removeView(mLoadingView);
-            mLoadingView = null;
-        }
-        if (loadingView != null) {
-            setStateDrawables(null, mErrorDrawable, mEmptyDrawable);
-            mLoadingView = loadingView;
-            addView(mLoadingView, layoutParams);
-            checkViewVisibility();
-        }
+    private void stop(Drawable drawable) {
+        if (drawable instanceof Animatable)
+            ((Animatable) drawable).stop();
     }
 
-    /**
-     * 设置自定义载入View
-     *
-     * @param loadingView 载入View
-     */
-    public void setLoadingView(View loadingView) {
-        if (loadingView == null) {
-            setLoadingView(null, null);
-            return;
-        }
-        ViewGroup.LayoutParams lpHas = loadingView.getLayoutParams();
-        LayoutParams lp = lpHas == null ? new LayoutParams(LayoutParams.WRAP_CONTENT,
-                LayoutParams.WRAP_CONTENT, Gravity.CENTER) :
-                generateLayoutParams(lpHas);
-        lp.setState(STATE_LOADING);
-        setLoadingView(loadingView, lp);
+    private void start(Drawable drawable) {
+        if (drawable instanceof Animatable)
+            ((Animatable) drawable).start();
     }
 
-    /**
-     * 设置自定义错误View
-     *
-     * @param errorView    错误View
-     * @param layoutParams 布局方式
-     */
-    public void setErrorView(View errorView, LayoutParams layoutParams) {
-        if (mErrorView == errorView) {
-            return;
-        }
-        if (mErrorView != null) {
-            removeView(mErrorView);
-            mErrorView = null;
-        }
-        if (errorView != null) {
-            setStateDrawables(mLoadingDrawable, null, mEmptyDrawable);
-            mErrorView = errorView;
-            addView(mErrorView, layoutParams);
-            checkViewVisibility();
-        }
-    }
-
-    /**
-     * 设置自定义错误View
-     *
-     * @param errorView 错误View
-     */
-    public void setErrorView(View errorView) {
-        if (errorView == null) {
-            setErrorView(null, null);
-            return;
-        }
-        ViewGroup.LayoutParams lpHas = errorView.getLayoutParams();
-        LayoutParams lp = lpHas == null ? new LayoutParams(LayoutParams.WRAP_CONTENT,
-                LayoutParams.WRAP_CONTENT, Gravity.CENTER) :
-                generateLayoutParams(lpHas);
-        lp.setState(STATE_ERROR);
-        setErrorView(errorView, lp);
-    }
-
-    /**
-     * 设置自定义空白View
-     *
-     * @param emptyView    空白View
-     * @param layoutParams 布局方式
-     */
-    public void setEmptyView(View emptyView, LayoutParams layoutParams) {
-        if (mEmptyView == emptyView) {
-            return;
-        }
-        if (mEmptyView != null) {
-            removeView(mEmptyView);
-            mEmptyView = null;
-        }
-        if (emptyView != null) {
-            setStateDrawables(mLoadingDrawable, mErrorDrawable, null);
-            mEmptyView = emptyView;
-            addView(mEmptyView, layoutParams);
-            checkViewVisibility();
-        }
-    }
-
-    /**
-     * 设置自定义空白View
-     *
-     * @param emptyView 空白View
-     */
-    public void setEmptyView(View emptyView) {
-        if (emptyView == null) {
-            setEmptyView(null, null);
-            return;
-        }
-        ViewGroup.LayoutParams lpHas = emptyView.getLayoutParams();
-        LayoutParams lp = lpHas == null ? new LayoutParams(LayoutParams.WRAP_CONTENT,
-                LayoutParams.WRAP_CONTENT, Gravity.CENTER) :
-                generateLayoutParams(lpHas);
-        lp.setState(STATE_EMPTY);
-        setEmptyView(emptyView, lp);
-    }
-
-    /**
-     * 设置状态View
-     *
-     * @param loading 载入
-     * @param error   错误
-     * @param empty   空白
-     */
-    @SuppressWarnings("unused")
-    public void setStateViews(View loading, View error, View empty) {
-        setLoadingView(loading);
-        setErrorView(error);
-        setEmptyView(empty);
-    }
-
-    private void checkViewVisibility() {
+    private void updateAnimateDrawable() {
         switch (mState) {
             default:
             case STATE_NORMAL:
-                if (mLoadingView != null)
-                    mLoadingView.setVisibility(View.GONE);
-                if (mErrorView != null)
-                    mErrorView.setVisibility(View.GONE);
-                if (mEmptyView != null)
-                    mEmptyView.setVisibility(View.GONE);
-                showAllItems(true);
+                stop(mDrawableLoading);
+                stop(mDrawableError);
+                stop(mDrawableEmpty);
                 break;
             case STATE_LOADING:
-                if (mLoadingView != null)
-                    mLoadingView.setVisibility(View.VISIBLE);
-                if (mErrorView != null)
-                    mErrorView.setVisibility(View.GONE);
-                if (mEmptyView != null)
-                    mEmptyView.setVisibility(View.GONE);
-                showAllItems(mAlwaysDrawChild);
+                start(mDrawableLoading);
+                stop(mDrawableError);
+                stop(mDrawableEmpty);
                 break;
             case STATE_ERROR:
-                if (mLoadingView != null)
-                    mLoadingView.setVisibility(View.GONE);
-                if (mErrorView != null)
-                    mErrorView.setVisibility(View.VISIBLE);
-                if (mEmptyView != null)
-                    mEmptyView.setVisibility(View.GONE);
-                showAllItems(mAlwaysDrawChild);
+                stop(mDrawableLoading);
+                start(mDrawableError);
+                stop(mDrawableEmpty);
                 break;
             case STATE_EMPTY:
-                if (mLoadingView != null)
-                    mLoadingView.setVisibility(View.GONE);
-                if (mErrorView != null)
-                    mErrorView.setVisibility(View.GONE);
-                if (mEmptyView != null)
-                    mEmptyView.setVisibility(View.VISIBLE);
-                showAllItems(mAlwaysDrawChild);
+                stop(mDrawableLoading);
+                stop(mDrawableError);
+                start(mDrawableEmpty);
                 break;
         }
     }
 
-    private void showAllItems(boolean show) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child != mLoadingView && child != mEmptyView && child != mErrorView) {
-                child.setVisibility(show ? VISIBLE : INVISIBLE);
-            }
-        }
-    }
-
-    /**
-     * 设置载入 Drawable
-     *
-     * @param loading 载入
-     */
-    public void setLoadingDrawable(Drawable loading) {
-        if (mLoadingDrawable != loading) {
-            if (mLoadingDrawable != null) {
-                if (mLoadingDrawable instanceof Animatable) {
-                    ((Animatable) mLoadingDrawable).stop();
-                }
-                mLoadingDrawable.setCallback(null);
-            }
-            mLoadingDrawable = loading;
-            if (mLoadingDrawable != null) {
-                mLoadingDrawable.setCallback(this);
-                setLoadingView(null);
-            }
-            requestLayout();
-            invalidate();
-            animateDrawable();
-        }
-    }
-
-    /**
-     * 设置载入 Drawable
-     *
-     * @param loading 载入
-     */
-    public void setLoadingDrawable(int loading) {
-        setLoadingDrawable(Compat.getDrawable(getContext(), loading));
-    }
-
-    /**
-     * 设置错误 Drawable
-     *
-     * @param error 错误
-     */
-    public void setErrorDrawable(Drawable error) {
-        if (mErrorDrawable != error) {
-            if (mErrorDrawable != null) {
-                if (mErrorDrawable instanceof Animatable) {
-                    ((Animatable) mErrorDrawable).stop();
-                }
-                mErrorDrawable.setCallback(null);
-            }
-            mErrorDrawable = error;
-            if (mErrorDrawable != null) {
-                mErrorDrawable.setCallback(this);
-                setErrorView(null);
-            }
-            requestLayout();
-            invalidate();
-            animateDrawable();
-        }
-    }
-
-    /**
-     * 设置错误 Drawable
-     *
-     * @param error 错误
-     */
-    public void setErrorDrawable(int error) {
-        setErrorDrawable(Compat.getDrawable(getContext(), error));
-    }
-
-    /**
-     * 设置空白 Drawable
-     *
-     * @param empty 空白
-     */
-    public void setEmptyDrawable(Drawable empty) {
-        if (mEmptyDrawable != empty) {
-            if (mEmptyDrawable != null) {
-                if (mEmptyDrawable instanceof Animatable) {
-                    ((Animatable) mEmptyDrawable).stop();
-                }
-                mEmptyDrawable.setCallback(null);
-            }
-            mEmptyDrawable = empty;
-            if (mEmptyDrawable != null) {
-                mEmptyDrawable.setCallback(this);
-                setEmptyView(null);
-            }
-            requestLayout();
-            invalidate();
-            animateDrawable();
-        }
-    }
-
-    /**
-     * 设置空白 Drawable
-     *
-     * @param empty 空白
-     */
-    public void setEmptyDrawable(int empty) {
-        setEmptyDrawable(Compat.getDrawable(getContext(), empty));
-    }
-
-    /**
-     * 设置状态 Drawable
-     *
-     * @param loading 载入
-     * @param error   错误
-     * @param empty   空白
-     */
-    public void setStateDrawables(Drawable loading, Drawable error, Drawable empty) {
-        setLoadingDrawable(loading);
-        setErrorDrawable(error);
-        setEmptyDrawable(empty);
-    }
-
-    /**
-     * 设置状态 Drawable
-     *
-     * @param loading 载入
-     * @param error   错误
-     * @param empty   空内容
-     */
-    @SuppressWarnings("unused")
-    public void setStateDrawables(int loading, int error, int empty) {
-        setLoadingDrawable(loading);
-        setErrorDrawable(error);
-        setEmptyDrawable(empty);
-    }
-
-    private void animateDrawable() {
-        switch (mState) {
-            default:
-            case STATE_NORMAL:
-                if (mLoadingDrawable != null
-                        && mLoadingDrawable instanceof Animatable) {
-                    ((Animatable) mLoadingDrawable).stop();
-                }
-                if (mErrorDrawable != null
-                        && mErrorDrawable instanceof Animatable) {
-                    ((Animatable) mErrorDrawable).stop();
-                }
-                if (mEmptyDrawable != null
-                        && mEmptyDrawable instanceof Animatable) {
-                    ((Animatable) mEmptyDrawable).stop();
-                }
-                break;
-            case STATE_ERROR:
-                if (mLoadingDrawable != null
-                        && mLoadingDrawable instanceof Animatable) {
-                    ((Animatable) mLoadingDrawable).stop();
-                }
-                if (mErrorDrawable != null
-                        && mErrorDrawable instanceof Animatable) {
-                    ((Animatable) mErrorDrawable).start();
-                }
-                if (mEmptyDrawable != null
-                        && mEmptyDrawable instanceof Animatable) {
-                    ((Animatable) mEmptyDrawable).stop();
-                }
-                break;
-            case STATE_LOADING:
-                if (mLoadingDrawable != null
-                        && mLoadingDrawable instanceof Animatable) {
-                    ((Animatable) mLoadingDrawable).start();
-                }
-                if (mErrorDrawable != null
-                        && mErrorDrawable instanceof Animatable) {
-                    ((Animatable) mErrorDrawable).stop();
-                }
-                if (mEmptyDrawable != null
-                        && mEmptyDrawable instanceof Animatable) {
-                    ((Animatable) mEmptyDrawable).stop();
-                }
-                break;
-        }
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        if (mChangeType == CHANGE_DRAW && mForceIntercept && mState != STATE_NORMAL)
+            return true;
+        return super.onInterceptTouchEvent(ev);
     }
 
     /**
@@ -785,167 +433,295 @@ public class StateFrameLayout extends FrameLayout {
      * @param state 状态
      */
     public void setState(int state) {
-        if (mState != state) {
-            mState = state;
-            invalidateState();
-        }
-    }
-
-    /**
-     * 刷新状态
-     */
-    public void invalidateState() {
-        checkViewVisibility();
+        if (mState == state)
+            return;
+        mState = state;
+        if (mChangeType != CHANGE_DRAW)
+            requestLayout();
         invalidate();
-        animateDrawable();
-    }
-
-    /**
-     * 修改状态为普通
-     */
-    @SuppressWarnings("unused")
-    public void normal() {
-        setState(STATE_NORMAL);
+        updateAnimateDrawable();
     }
 
     /**
      * 修改状态为载入
      */
-    @SuppressWarnings("unused")
     public void loading() {
         setState(STATE_LOADING);
     }
 
     /**
+     * 判断是否为载入状态
+     *
+     * @return 是否为载入状态
+     */
+    public boolean isLoading() {
+        return getState() == STATE_LOADING;
+    }
+
+    /**
      * 修改状态为错误
      */
-    @SuppressWarnings("unused")
     public void error() {
         setState(STATE_ERROR);
     }
 
     /**
+     * 判断是否为错误状态
+     *
+     * @return 是否为错误状态
+     */
+    public boolean isError() {
+        return getState() == STATE_ERROR;
+    }
+
+    /**
      * 修改状态为空白
      */
-    @SuppressWarnings("unused")
     public void empty() {
         setState(STATE_EMPTY);
     }
 
     /**
-     * 是否始终绘制子项
+     * 判断是否为空白状态
      *
-     * @return 是否始终绘制子项
+     * @return 是否为空白状态
      */
-    public boolean isAlwaysDrawChild() {
-        return mAlwaysDrawChild;
+    public boolean isEmpty() {
+        return getState() == STATE_EMPTY;
     }
 
     /**
-     * 设置是否始终绘制子项
-     *
-     * @param draw 是否始终绘制子项
+     * 修改状态为普通
      */
-    public void setAlwaysDrawChild(boolean draw) {
-        mAlwaysDrawChild = draw;
+    public void normal() {
+        setState(STATE_NORMAL);
+    }
+
+    /**
+     * 判断是否为普通状态
+     *
+     * @return 是否为普通状态
+     */
+    public boolean isNormal() {
+        return getState() == STATE_NORMAL;
+    }
+
+    /**
+     * 获取变化类型
+     *
+     * @return 变化类型
+     */
+    public int getChangeType() {
+        return mChangeType;
+    }
+
+    /**
+     * 设置变化类型
+     *
+     * @param type 变化类型
+     */
+    public void setChangeType(int type) {
+        if (mChangeType == type)
+            return;
+        mChangeType = type;
+        requestLayout();
         invalidate();
     }
 
     /**
-     * 状态点击监听
+     * 判断在状态变化为控制绘图且状态不为普通的情况下状态改变是否强制拦截触摸事件
      *
-     * @param listener 状态点击监听
+     * @return 是否强制拦截触摸事件
      */
-    @SuppressWarnings("unused")
-    public void setOnStateClickListener(OnStateClickListener listener) {
-        mClickListener = listener;
-    }
-
-    @Override
-    public Parcelable onSaveInstanceState() {
-        Parcelable superState = super.onSaveInstanceState();
-        SavedState ss = new SavedState(superState);
-        ss.mState = getState();
-        ss.mAlwaysDrawChild = isAlwaysDrawChild();
-        return ss;
-    }
-
-    @Override
-    public void onRestoreInstanceState(Parcelable state) {
-        SavedState ss = (SavedState) state;
-        setAlwaysDrawChild(ss.mAlwaysDrawChild);
-        mState = ss.mState;
-        invalidateState();
-        super.onRestoreInstanceState(ss.getSuperState());
+    public boolean isForceIntercept() {
+        return mForceIntercept;
     }
 
     /**
-     * 状态点击监听
+     * 设置在状态变化为控制绘图且状态不为普通的情况下状态改变是否强制拦截触摸事件
      *
-     * @author Alex
+     * @param force 是否强制拦截触摸事件
      */
-    public interface OnAllStateClickListener extends OnStateClickListener {
-        void onNormalClick(StateFrameLayout layout);
-
-        void onLoadingClick(StateFrameLayout layout);
-
-        void onEmptyClick(StateFrameLayout layout);
+    public void setForceIntercept(boolean force) {
+        mForceIntercept = force;
     }
 
     /**
-     * 状态点击监听
+     * 判断普通状态下的子项是否始终不隐藏
      *
-     * @author Alex
+     * @return 是否始终不隐藏
      */
-    public interface OnStateClickListener {
-        void onErrorClick(StateFrameLayout layout);
+    public boolean isNormalNeverHide() {
+        return mNormalNeverHide;
     }
 
-    private static class SavedState extends BaseSavedState {
-        public static final Creator<SavedState> CREATOR = new Creator<SavedState>() {
-            public SavedState createFromParcel(Parcel in) {
-                return new SavedState(in);
-            }
+    /**
+     * 设置普通状态下的子项是否始终不隐藏
+     *
+     * @param never 是否始终不隐藏
+     */
+    public void setNormalNeverHide(boolean never) {
+        if (mNormalNeverHide == never)
+            return;
+        mNormalNeverHide = never;
+        requestLayout();
+        invalidate();
+    }
 
-            public SavedState[] newArray(int size) {
-                return new SavedState[size];
-            }
-        };
-        private int mState = STATE_NORMAL;
-        private boolean mAlwaysDrawChild = false;
+    /**
+     * 获取载入状态图片
+     *
+     * @return 载入状态图片
+     */
+    public Drawable getDrawableLoading() {
+        return mDrawableLoading;
+    }
 
-        SavedState(Parcelable superState) {
-            super(superState);
-        }
+    /**
+     * 设置载入状态图片
+     *
+     * @param loading 载入状态图片
+     */
+    public void setDrawableLoading(Drawable loading) {
+        if (mDrawableLoading == loading)
+            return;
+        if (mDrawableLoading != null)
+            mDrawableLoading.setCallback(null);
+        mDrawableLoading = loading;
+        if (mDrawableLoading != null)
+            mDrawableLoading.setCallback(this);
+        invalidate();
+        updateAnimateDrawable();
+    }
 
-        private SavedState(Parcel in) {
-            super(in);
-            mState = in.readInt();
-            mAlwaysDrawChild = in.readInt() == 1;
-        }
+    /**
+     * 获取错误状态图片
+     *
+     * @return 错误状态图片
+     */
+    public Drawable getDrawableError() {
+        return mDrawableError;
+    }
 
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            super.writeToParcel(out, flags);
-            out.writeInt(mState);
-            out.writeInt(mAlwaysDrawChild ? 1 : 0);
+    /**
+     * 设置错误状态图片
+     *
+     * @param error 错误状态图片
+     */
+    public void setDrawableError(Drawable error) {
+        if (mDrawableError == error)
+            return;
+        if (mDrawableError != null)
+            mDrawableError.setCallback(null);
+        mDrawableError = error;
+        if (mDrawableError != null)
+            mDrawableError.setCallback(this);
+        invalidate();
+        updateAnimateDrawable();
+    }
+
+    /**
+     * 获取空白状态图片
+     *
+     * @return 空白状态图片
+     */
+    public Drawable getDrawableEmpty() {
+        return mDrawableEmpty;
+    }
+
+    /**
+     * 设置空白状态图片
+     *
+     * @param empty 空白状态图片
+     */
+    public void setDrawableEmpty(Drawable empty) {
+        if (mDrawableEmpty == empty)
+            return;
+        if (mDrawableEmpty != null)
+            mDrawableEmpty.setCallback(null);
+        mDrawableEmpty = empty;
+        if (mDrawableEmpty != null)
+            mDrawableEmpty.setCallback(this);
+        invalidate();
+        updateAnimateDrawable();
+    }
+
+    /**
+     * 设置图片
+     *
+     * @param loading 载入状态图片
+     * @param error   错误状态图片
+     * @param empty   空白状态图片
+     */
+    public void setDrawable(Drawable loading, Drawable error, Drawable empty) {
+        if (mDrawableLoading == loading && mDrawableError == error && mDrawableEmpty == empty)
+            return;
+        if (mDrawableLoading != null)
+            mDrawableLoading.setCallback(null);
+        mDrawableLoading = loading;
+        if (mDrawableLoading != null)
+            mDrawableLoading.setCallback(this);
+        if (mDrawableError != null)
+            mDrawableError.setCallback(null);
+        mDrawableError = error;
+        if (mDrawableError != null)
+            mDrawableError.setCallback(this);
+        if (mDrawableEmpty != null)
+            mDrawableEmpty.setCallback(null);
+        mDrawableEmpty = empty;
+        if (mDrawableEmpty != null)
+            mDrawableEmpty.setCallback(this);
+        invalidate();
+        updateAnimateDrawable();
+    }
+
+    /**
+     * 设置图片
+     *
+     * @param loading 载入状态图片
+     * @param error   错误状态图片
+     * @param empty   空白状态图片
+     */
+    public void setDrawable(int loading, int error, int empty) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            final Context context = getContext();
+            setDrawable(context.getDrawable(loading), context.getDrawable(error),
+                    context.getDrawable(empty));
+        } else {
+            final Resources res = getResources();
+            setDrawable(res.getDrawable(loading), res.getDrawable(error), res.getDrawable(empty));
         }
     }
 
     /**
-     * Per-child layout information associated with WrapLayout.
+     * 布局参数
      */
     public static class LayoutParams extends FrameLayout.LayoutParams {
 
         private int mState = STATE_NORMAL;
 
-        public LayoutParams(Context c, AttributeSet attrs) {
-            super(c, attrs);
-            int state = STATE_NORMAL;
-            TypedArray custom = c.obtainStyledAttributes(attrs, R.styleable.StateFrameLayout_Layout);
-            state = custom.getInt(R.styleable.StateFrameLayout_Layout_sflLayout_state, state);
+        public LayoutParams(Context context, AttributeSet attrs) {
+            super(context, attrs);
+            final TypedArray custom = context.obtainStyledAttributes(attrs,
+                    R.styleable.StateFrameLayout_Layout);
+            final int state = custom.getInt(R.styleable.StateFrameLayout_Layout_sflLayout_state,
+                    0);
             custom.recycle();
-            mState = state;
+            switch (state) {
+                default:
+                case 0:
+                    mState = STATE_NORMAL;
+                    break;
+                case 1:
+                    mState = STATE_LOADING;
+                    break;
+                case 2:
+                    mState = STATE_ERROR;
+                    break;
+                case 3:
+                    mState = STATE_EMPTY;
+                    break;
+            }
         }
 
         public LayoutParams(int width, int height) {
@@ -969,12 +745,12 @@ public class StateFrameLayout extends FrameLayout {
             super(source);
         }
 
-        @TargetApi(19)
+        @TargetApi(Build.VERSION_CODES.KITKAT)
         public LayoutParams(FrameLayout.LayoutParams source) {
             super(source);
         }
 
-        @TargetApi(19)
+        @TargetApi(Build.VERSION_CODES.KITKAT)
         public LayoutParams(LayoutParams source) {
             super(source);
             mState = source.mState;

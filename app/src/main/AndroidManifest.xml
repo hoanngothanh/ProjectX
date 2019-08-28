@@ -3,9 +3,13 @@
     package="am.project.x">
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name=".ProjectXApplication"
@@ -24,6 +28,9 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
         <activity
             android:name=".business.main.MainActivity"
@@ -57,8 +64,8 @@
             android:name=".business.widgets.indicatortabstrip.IndicatorTabStripActivity"
             android:label="@string/its_label" />
         <activity
-            android:name=".business.widgets.shapeimageview.ShapeImageViewActivity"
-            android:label="@string/siv_label" />
+            android:name=".business.widgets.multifunctionalimageview.MultifunctionalImageViewActivity"
+            android:label="@string/miv_label" />
         <activity
             android:name=".business.widgets.statelayout.StateLayoutActivity"
             android:label="@string/sl_label" />
@@ -91,20 +98,17 @@
             android:name=".business.drawables.loadingdrawable.LoadingDrawableActivity"
             android:label="@string/ld_label" />
         <activity
-            android:name=".business.drawables.centerdrawable.CenterDrawableActivity"
-            android:label="@string/cd_label" />
-        <activity
-            android:name=".business.drawables.combinationdrawable.CombinationDrawableActivity"
-            android:label="@string/cod_label" />
-        <activity
             android:name=".business.drawables.cornerdrawable.CornerDrawableActivity"
             android:label="@string/cnd_label" />
+        <activity
+            android:name=".business.drawables.framedrawable.FrameDrawableActivity"
+            android:label="@string/frame_label" />
         <activity
             android:name=".business.drawables.linedrawable.LineDrawableActivity"
             android:label="@string/lid_label" />
         <activity
-            android:name=".business.drawables.lineardrawable.LinearDrawableActivity"
-            android:label="@string/lrd_label" />
+            android:name=".business.drawables.griddrawable.GridDrawableActivity"
+            android:label="@string/grd_label" />
         <activity
             android:name=".business.drawables.textdrawable.TextDrawableActivity"
             android:label="@string/td_label" />
@@ -115,6 +119,53 @@
             android:name=".business.others.crypto.CryptoActivity"
             android:label="@string/crypto_label" />
         <activity android:name=".business.browser.BrowserActivity" />
+        <activity
+            android:name=".business.others.ftp.FTPActivity"
+            android:label="@string/ftp_label"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".business.others.ftp.FTPSwitcherActivity"
+            android:theme="@style/CompletelyTransparentDialog" />
+        <activity
+            android:name=".business.others.font.FontActivity"
+            android:label="@string/font_label" />
+        <activity
+            android:name=".business.others.opentypelist.OpenTypeListActivity"
+            android:label="@string/otl_label" />
+        <activity
+            android:name=".business.others.opentype.OpenTypeActivity"
+            android:label="@string/ot_label" />
+        <activity
+            android:name=".business.others.floatingactionmode.FloatingActionModeActivity"
+            android:label="@string/floating_label" />
+        <activity
+            android:name=".business.widgets.multifunctionalrecyclerview.MultifunctionalRecyclerViewActivity"
+            android:label="@string/mrv_label" />
+        <activity
+            android:name=".business.others.clipboard.ClipboardActivity"
+            android:label="@string/clipboard_label" />
+        <activity
+            android:name=".business.others.retrofithelper.RetrofitActivity"
+            android:label="@string/retrofit_label" />
+
+        <service
+            android:name=".business.others.ftp.FTPService"
+            android:exported="false" />
+        <service
+            android:name=".business.others.ftp.FTPTileService"
+            android:icon="@drawable/ic_tile_ftp"
+            android:label="@string/ftp_tile_label_inactive"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <provider
+            android:name=".business.others.clipboard.MyClipboardProvider"
+            android:authorities="${applicationId}.clipboardprovider"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>

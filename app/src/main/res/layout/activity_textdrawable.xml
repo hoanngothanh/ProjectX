@@ -7,7 +7,7 @@
     android:orientation="vertical"
     tools:context=".business.drawables.textdrawable.TextDrawableActivity">
 
-    <android.support.v7.widget.Toolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/td_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -25,7 +25,7 @@
             android:layout_width="120dp"
             android:layout_height="120dp"
             android:layout_gravity="center"
-            android:background="@drawable/bg_centerdrawable_item" />
+            android:background="@drawable/bg_common_item" />
 
         <View
             android:id="@+id/td_v_content"
